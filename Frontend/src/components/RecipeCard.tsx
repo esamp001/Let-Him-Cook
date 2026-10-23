@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card } from 'antd';
 import { ClockCircleOutlined, HeartOutlined, HeartFilled, FireOutlined } from '@ant-design/icons';
 import type { Recipe } from '../types/recipe';
+import './RecipeCard.css';
 
 interface Props {
   recipe: Recipe;

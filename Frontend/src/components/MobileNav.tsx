@@ -1,6 +1,7 @@
 import { HomeOutlined, BookOutlined, CheckSquareOutlined, UserOutlined } from '@ant-design/icons';
 import { Badge } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
+import './MobileNav.css';
 
 interface Props {
   shoppingListCount?: number;

@@ -1,0 +1,10 @@
+.popular-recipes-section { padding: 40px 0 64px; }
+.popular-recipes-container { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+.section-title { font-size: 22px; font-weight: 700; color: #111827; margin: 0; }
+.view-all-btn { background: none; border: none; font-size: 14px; font-weight: 600; color: #0D3B2E; display: flex; align-items: center; gap: 6px; cursor: pointer; transition: gap 0.2s; }
+.view-all-btn:hover { gap: 10px; color: #134E4A; }
+.recipes-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+.recipes-grid.full-grid { grid-template-columns: repeat(3, 1fr); gap: 24px; }
+@media (max-width: 1024px) { .recipes-grid, .recipes-grid.full-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 640px) { .recipes-grid, .recipes-grid.full-grid { grid-template-columns: 1fr; } }

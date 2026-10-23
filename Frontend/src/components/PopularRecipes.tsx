@@ -2,6 +2,7 @@ import { ArrowRightOutlined } from '@ant-design/icons';
 import { RecipeCard } from './RecipeCard';
 import { mockRecipes } from '../data/mockRecipes';
 import type { Recipe } from '../types/recipe';
+import './PopularRecipes.css';
 
 interface Props {
   onSelectRecipe?: (recipe: Recipe) => void;

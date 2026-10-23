@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useState, type FormEvent } from 'react';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import heroImg from '../assets/Rustic Herb Chicken Bowl with Fresh Garnishes.png';
+import './HeroSection.css';
 
 interface Props {
   onSearch: (ingredients: string) => void;
@@ -14,7 +16,7 @@ export const HeroSection = ({ onSearch }: Props) => {
     'eggs + spinach',
   ];
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
       onSearch(query.trim());
@@ -33,15 +35,19 @@ export const HeroSection = ({ onSearch }: Props) => {
         <div className="hero-content">
           <p className="hero-subtitle">Good food. Less stress.</p>
           <h1 className="hero-title">
-            Tell me what you have, <br />
+            Tell me what you have,
+            <br />
             I'll help you cook.
           </h1>
           <p className="hero-description">
-            Find delicious recipes based on your ingredients, create shopping lists,
-            and make cooking easier — one meal at a time.
+            Find delicious recipes based on your ingredients,
+            <br />
+            create shopping lists, and make cooking easier
+            <br />
+            — one meal at a time.
           </p>
 
-          {/* Search Bar */}
+          {/* Search Bar Pill */}
           <form className="hero-search-form" onSubmit={handleSubmit}>
             <div className="search-bar-wrapper">
               <span className="search-icon-circle">
@@ -82,38 +88,50 @@ export const HeroSection = ({ onSearch }: Props) => {
           </div>
         </div>
 
-        {/* Right Column: Culinary Visual Showcase */}
+        {/* Right Column: Culinary Visual & Annotation */}
         <div className="hero-visual">
-          <div className="hero-backdrop-shape" />
+          {/* Warm organic background shape behind the dish on the right */}
+          <div className="hero-warm-blob" />
 
           {/* Handwritten Annotation Callout */}
           <div className="hero-annotation">
             <span className="annotation-text">
-              Great meals <br />
-              start with <br />
+              Great meals
+              <br />
+              start with
+              <br />
               what you have
             </span>
             <svg
               className="annotation-arrow"
-              width="42"
-              height="42"
-              viewBox="0 0 50 50"
+              width="38"
+              height="44"
+              viewBox="0 0 38 44"
               fill="none"
-              stroke="#0D3B2E"
-              strokeWidth="2"
-              strokeLinecap="round"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M 10 10 Q 25 35 38 32" />
-              <path d="M 30 26 L 39 32 L 32 38" />
+              <path
+                d="M12 4C22 14 28 26 22 36"
+                stroke="#0D3B2E"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+              />
+              <path
+                d="M14 31L22 37L28 30"
+                stroke="#0D3B2E"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
 
           {/* Hero Dish Image */}
-          <div className="hero-dish-container">
+          <div className="hero-dish-wrapper">
             <img
-              src="https://images.unsplash.com/photo-1598103442097-8b74394b95c6?auto=format&fit=crop&w=900&q=80"
-              alt="Roasted Chicken with Potatoes and Herbs"
-              className="hero-dish-image"
+              src={heroImg}
+              alt="Rustic herb chicken bowl with fresh garnishes"
+              className="hero-dish-img"
             />
           </div>
         </div>
@@ -121,4 +139,3 @@ export const HeroSection = ({ onSearch }: Props) => {
     </section>
   );
 };
-

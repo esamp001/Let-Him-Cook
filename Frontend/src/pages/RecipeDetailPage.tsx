@@ -1,15 +1,20 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Button, Checkbox } from 'antd';
 import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined} from '@ant-design/icons';
 import { toast } from '../components/Toast';
 import type { Recipe } from '../types/recipe';
 import type { ShoppingItem } from '../types/shoppingList';
+import { culinaryPalette } from '../theme/themeConfig';
 
 interface Props {
   recipe: Recipe;
   onBack: () => void;
   onAddToShoppingList: (items: ShoppingItem[]) => void;
 }
+
+const styles: Record<string, CSSProperties> = {
+  container: { maxWidth: 900, margin: '0 auto', padding: '24px 24px 60px' }, backBar: { marginBottom: 16 }, backButton: { background: 'none', border: 'none', fontSize: 14, fontWeight: 600, color: culinaryPalette.primary, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 0' }, hero: { width: '100%', height: 380, borderRadius: 20, overflow: 'hidden', marginBottom: 24, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)' }, image: { width: '100%', height: '100%', objectFit: 'cover' }, header: { marginBottom: 32 }, titleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }, title: { fontSize: 32, fontWeight: 800, color: culinaryPalette.text, margin: 0 }, favoriteButton: { background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}`, borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer' }, meta: { display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }, metaBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: culinaryPalette.textSecondary, backgroundColor: culinaryPalette.surfaceMuted, padding: '6px 14px', borderRadius: 9999 }, description: { fontSize: 16, lineHeight: 1.6, color: culinaryPalette.textSecondary, margin: 0 }, grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }, card: { backgroundColor: culinaryPalette.surface, borderRadius: 16, border: `1px solid ${culinaryPalette.border}`, padding: 24, boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)' }, titleRowColumn: { display: 'flex', flexDirection: 'column', marginBottom: 16 }, columnTitle: { fontSize: 20, fontWeight: 700, color: culinaryPalette.text, margin: '0 0 4px' }, columnSubtitle: { fontSize: 12, color: culinaryPalette.textMuted }, ingredients: { display: 'flex', flexDirection: 'column', gap: 10 }, ingredientRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, border: `1px solid ${culinaryPalette.borderSubtle}`, backgroundColor: culinaryPalette.pageBackground, cursor: 'pointer' }, ownedIngredientRow: { backgroundColor: culinaryPalette.successSurface, borderColor: culinaryPalette.successBackground }, ingredientInfo: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, ingredientName: { fontSize: 14, fontWeight: 500, color: culinaryPalette.textSecondary }, optionalTag: { color: culinaryPalette.textSubtle, fontSize: 12, fontWeight: 400 }, ingredientQuantity: { fontSize: 13, color: culinaryPalette.textMuted }, pantryBadge: { fontSize: 11, fontWeight: 600, color: culinaryPalette.success, backgroundColor: culinaryPalette.successBackground, padding: '2px 8px', borderRadius: 9999 }, steps: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14 }, step: { display: 'flex', alignItems: 'flex-start', gap: 12 }, stepNumber: { fontWeight: 700, color: culinaryPalette.primary, fontSize: 15, minWidth: 20 }, stepText: { fontSize: 14, lineHeight: 1.5, color: culinaryPalette.textSecondary }, ctaBar: { textAlign: 'center' }, ctaButton: { width: '100%', maxWidth: 420, height: 52, fontSize: 16, fontWeight: 700 },
+};
 
 const RecipeDetailPage = ({
   recipe,
@@ -57,89 +62,89 @@ const RecipeDetailPage = ({
   };
 
   return (
-    <div className="recipe-detail-container">
+    <div style={styles.container}>
       {/* Back button bar */}
-      <div className="recipe-detail-back-bar">
-        <button type="button" className="back-btn" onClick={onBack}>
+      <div style={styles.backBar}>
+        <button type="button" style={styles.backButton} onClick={onBack}>
           <ArrowLeftOutlined /> Back to Recipes
         </button>
       </div>
 
       {/* Hero Banner Image */}
-      <div className="recipe-detail-hero">
+      <div style={styles.hero}>
         <img
           src={recipe.imageUrl}
           alt={recipe.title}
-          className="recipe-detail-image"
+          style={styles.image}
         />
       </div>
 
       {/* Header Info */}
-      <div className="recipe-detail-header">
-        <div className="recipe-title-row">
-          <h1 className="recipe-detail-title">{recipe.title}</h1>
+      <div style={styles.header}>
+        <div style={styles.titleRow}>
+          <h1 style={styles.title}>{recipe.title}</h1>
           <button
             type="button"
-            className="detail-favorite-btn"
+            style={styles.favoriteButton}
             onClick={handleToggleFavorite}
             aria-label="Toggle favorite"
           >
             {favorite ? (
-              <HeartFilled style={{ color: '#EA580C' }} />
+              <HeartFilled style={{ color: culinaryPalette.accent }} />
             ) : (
-              <HeartOutlined style={{ color: '#4B5563' }} />
+              <HeartOutlined style={{ color: culinaryPalette.textSecondary }} />
             )}
           </button>
         </div>
 
-        <div className="recipe-detail-meta">
-          <span className="meta-badge">
+        <div style={styles.meta}>
+          <span style={styles.metaBadge}>
             <ClockCircleOutlined /> {recipe.cookingTimeMinutes} min
           </span>
-          <span className="meta-badge">
+          <span style={styles.metaBadge}>
             <FireOutlined /> {recipe.difficulty}
           </span>
         </div>
 
         {recipe.description && (
-          <p className="recipe-detail-description">{recipe.description}</p>
+          <p style={styles.description}>{recipe.description}</p>
         )}
       </div>
 
       {/* Two-Column Grid: Ingredients & Steps */}
-      <div className="recipe-detail-grid">
+      <div style={styles.grid}>
         {/* Left Column: Ingredients */}
-        <div className="recipe-detail-card ingredients-column">
-          <div className="column-title-row">
-            <h2 className="column-title">Ingredients</h2>
-            <span className="column-subtitle">Select to add to shopping list</span>
+        <div style={styles.card}>
+          <div style={styles.titleRowColumn}>
+            <h2 style={styles.columnTitle}>Ingredients</h2>
+            <span style={styles.columnSubtitle}>Select to add to shopping list</span>
           </div>
 
-          <div className="ingredients-list">
+          <div style={styles.ingredients}>
             {recipe.ingredients.map((ing) => {
               const isSelected = selectedIngredients.includes(ing.name);
               return (
                 <div
                   key={ing.name}
-                  className={`ingredient-row ${ing.isOwned ? 'owned' : 'missing'}`}
+                  style={{ ...styles.ingredientRow, ...(ing.isOwned ? styles.ownedIngredientRow : {}) }}
                   onClick={() => toggleIngredient(ing.name)}
                 >
                   <Checkbox
                     checked={isSelected || ing.isOwned}
                     disabled={ing.isOwned}
                   />
-                  <div className="ingredient-info">
-                    <span className="ingredient-name">
+                  <div style={styles.ingredientInfo}>
+                    <span style={styles.ingredientName}>
                       {ing.name}
                       {ing.isOptional && (
-                        <span className="optional-tag"> (optional)</span>
+                        <span style={styles.optionalTag}> (optional)</span>
                       )}
                     </span>
                     {ing.quantity && (
-                      <span className="ingredient-qty">({ing.quantity})</span>
+                      <span style={styles.ingredientQuantity}>({ing.quantity})</span>
                     )}
                   </div>
-                  {ing.isOwned && <span className="in-pantry-badge">In Pantry</span>}
+                  {ing.isOwned && <span style={styles.pantryBadge}>In Pantry</span>}
                 </div>
               );
             })}
@@ -147,13 +152,13 @@ const RecipeDetailPage = ({
         </div>
 
         {/* Right Column: Cooking Steps */}
-        <div className="recipe-detail-card steps-column">
-          <h2 className="column-title">Steps</h2>
-          <ol className="steps-list">
+        <div style={styles.card}>
+          <h2 style={styles.columnTitle}>Steps</h2>
+          <ol style={styles.steps}>
             {recipe.steps.map((step, idx) => (
-              <li key={idx} className="step-item">
-                <span className="step-number">{idx + 1}.</span>
-                <span className="step-text">{step}</span>
+              <li key={idx} style={styles.step}>
+                <span style={styles.stepNumber}>{idx + 1}.</span>
+                <span style={styles.stepText}>{step}</span>
               </li>
             ))}
           </ol>
@@ -161,12 +166,12 @@ const RecipeDetailPage = ({
       </div>
 
       {/* Sticky Bottom CTA */}
-      <div className="recipe-detail-cta-bar">
+      <div style={styles.ctaBar}>
         <Button
           type="primary"
           size="large"
           icon={<PlusOutlined />}
-          className="cta-shopping-btn"
+          style={styles.ctaButton}
           onClick={handleAddShoppingList}
         >
           Add to Shopping List

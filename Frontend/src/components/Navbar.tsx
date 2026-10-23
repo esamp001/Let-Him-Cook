@@ -1,14 +1,12 @@
-import { Avatar, Badge } from 'antd';
-import { UserOutlined } from '@ant-design/icons';
+import { Badge } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
+import './Navbar.css';
 
 interface Props {
   shoppingListCount?: number;
 }
 
-export const Navbar = ({
-  shoppingListCount = 0,
-}: Props) => {
+export const Navbar = ({ shoppingListCount = 0 }: Props) => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname.toLowerCase();
@@ -24,17 +22,36 @@ export const Navbar = ({
         <div className="navbar-logo" onClick={() => navigate('/Home')}>
           <span className="logo-icon" aria-label="Chef Hat">
             <svg
-              width="28"
-              height="28"
-              viewBox="0 0 24 24"
+              width="32"
+              height="32"
+              viewBox="0 0 36 36"
               fill="none"
-              stroke="#0D3B2E"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              xmlns="http://www.w3.org/2000/svg"
             >
-              <path d="M6 13.87A4 4 0 0 1 7.41 6a5.11 5.11 0 0 1 1.05-1.54 5 5 0 0 1 7.08 0A5.11 5.11 0 0 1 16.59 6 4 4 0 0 1 18 13.87V21H6Z" />
-              <line x1="6" y1="17" x2="18" y2="17" />
+              {/* Hat puffs */}
+              <path
+                d="M10 16.5C7.5 16.5 6 18.5 6 21C6 23.5 8 25.5 10.5 25.5H25.5C28 25.5 30 23.5 30 21C30 18.5 28.5 16.5 26 16.5C26.5 13.8 24.5 11 22 11C20.5 11 19.2 11.8 18.5 13C17.8 11.2 16 10 13.5 10C11 10 9.5 12.8 10 16.5Z"
+                fill="#FFFFFF"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              {/* Hat band */}
+              <path
+                d="M10 25.5H26V28C26 28.6 25.5 29 25 29H11C10.5 29 10 28.6 10 28V25.5Z"
+                fill="#FFFFFF"
+                stroke="#1F2937"
+                strokeWidth="2"
+                strokeLinejoin="round"
+              />
+              {/* Bottom warm accent plate */}
+              <path
+                d="M8.5 31C13 32.5 23 32.5 27.5 31"
+                stroke="#F59E0B"
+                strokeWidth="2.8"
+                strokeLinecap="round"
+              />
             </svg>
           </span>
           <span className="logo-text">
@@ -76,15 +93,26 @@ export const Navbar = ({
 
         {/* User Profile */}
         <div className="navbar-user">
-          <Avatar
-            size={38}
-            icon={<UserOutlined />}
-            style={{
-              backgroundColor: '#E5E7EB',
-              color: '#4B5563',
-              cursor: 'pointer',
-            }}
-          />
+          <button
+            type="button"
+            className="user-avatar-btn"
+            aria-label="User Profile"
+            onClick={() => alert('Profile feature coming soon!')}
+          >
+            <svg
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#9CA3AF"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+              <circle cx="12" cy="7" r="4" />
+            </svg>
+          </button>
         </div>
       </div>
     </header>

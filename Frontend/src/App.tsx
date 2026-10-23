@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
@@ -8,7 +8,7 @@ import RecipesPage from './pages/RecipesPage';
 import ShoppingListPage from './pages/ShoppingListPage';
 import type { Recipe } from './types/recipe';
 import type { ShoppingItem } from './types/shoppingList';
-import './App.css';
+import { culinaryPalette } from './theme/themeConfig';
 
 // Initial shopping items based on the design mockup
 const initialShoppingList: ShoppingItem[] = [
@@ -19,6 +19,9 @@ const initialShoppingList: ShoppingItem[] = [
   { id: '5', name: 'Chicken broth', quantity: '1 L', checked: false },
   { id: '6', name: 'Fresh parsley (optional)', quantity: '1 bunch', checked: false },
 ];
+
+const appShellStyle: CSSProperties = { minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: culinaryPalette.pageBackground };
+const mainContentStyle: CSSProperties = { flex: 1 };
 
 function App() {
   const navigate = useNavigate();
@@ -96,12 +99,12 @@ function App() {
   };
 
   return (
-    <div className="app-shell">
+    <div style={appShellStyle}>
       {/* Top Navigation Bar */}
       <Navbar shoppingListCount={shoppingList.filter((i) => !i.checked).length} />
 
       {/* Main Page Body */}
-      <main className="app-main-content">
+      <main style={mainContentStyle}>
         <Routes>
           <Route path="/" element={<Navigate to="/Home" replace />} />
           <Route

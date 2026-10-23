@@ -280,4 +280,11 @@ export default DashboardPage;
 import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined } from '@ant-design/icons';
 ```
 
+### Frontend Styling Standard
+
+- Use inline React styles in the owning `.tsx` file for component and page presentation.
+- Define reusable style values as typed `CSSProperties` objects near the top of that file, then pass them through the `style` prop.
+- Do not create or import `App.css`, page-level, or component-level CSS files for application presentation.
+- Keep only genuinely global browser and theme rules in `index.css`.
+
 

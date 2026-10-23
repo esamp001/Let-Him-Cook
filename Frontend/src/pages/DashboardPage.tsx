@@ -1,19 +1,18 @@
-import React from 'react';
 import { HeroSection } from '../components/HeroSection';
 import { PopularRecipes } from '../components/PopularRecipes';
 import type { Recipe } from '../types/recipe';
 
-interface DashboardPageProps {
+interface Props {
   onSearch: (ingredients: string) => void;
   onSelectRecipe: (recipe: Recipe) => void;
   onViewAllRecipes: () => void;
 }
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({
+const DashboardPage = ({
   onSearch,
   onSelectRecipe,
   onViewAllRecipes,
-}) => {
+}: Props) => {
   return (
     <div className="dashboard-content">
       <HeroSection onSearch={onSearch} />
@@ -24,3 +23,5 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     </div>
   );
 };
+
+export default DashboardPage;

@@ -1,38 +1,40 @@
-import React, { useState } from 'react';
-import { Button, message, Checkbox } from 'antd';
-import {
-  ArrowLeftOutlined,
-  ClockCircleOutlined,
-  FireOutlined,
-  HeartOutlined,
-  HeartFilled,
-  PlusOutlined,
-} from '@ant-design/icons';
+import { useState } from 'react';
+import { Button, Checkbox } from 'antd';
+import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined} from '@ant-design/icons';
+import { toast } from '../components/Toast';
 import type { Recipe } from '../types/recipe';
 import type { ShoppingItem } from '../types/shoppingList';
 
-interface RecipeDetailPageProps {
+interface Props {
   recipe: Recipe;
   onBack: () => void;
   onAddToShoppingList: (items: ShoppingItem[]) => void;
 }
 
-export const RecipeDetailPage: React.FC<RecipeDetailPageProps> = ({
+const RecipeDetailPage = ({
   recipe,
   onBack,
   onAddToShoppingList,
-}) => {
+}: Props) => {
+
+  const missingIngredientsCount = recipe.ingredients.filter((ing) => !ing.isOwned).map((ing) => ing.name)
+
   const [favorite, setFavorite] = useState(recipe.isFavorite ?? false);
-  const [selectedIngredients, setSelectedIngredients] = useState<string[]>(
-    recipe.ingredients
-      .filter((ing) => !ing.isOwned) // Pre-select missing ingredients
-      .map((ing) => ing.name)
-  );
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>( missingIngredientsCount);
+
 
   const toggleIngredient = (name: string) => {
     setSelectedIngredients((prev) =>
       prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
     );
+  };
+
+  const handleToggleFavorite = () => {
+    const nextFavorite = !favorite;
+    setFavorite(nextFavorite);
+    if (nextFavorite) {
+      toast.success('Recipe added to your favorites!');
+    }
   };
 
   const handleAddShoppingList = () => {
@@ -46,12 +48,12 @@ export const RecipeDetailPage: React.FC<RecipeDetailPageProps> = ({
       }));
 
     if (itemsToAdd.length === 0) {
-      message.info('No ingredients selected to add.');
+      toast.warning('No ingredients selected to add.');
       return;
     }
 
     onAddToShoppingList(itemsToAdd);
-    message.success(`Added ${itemsToAdd.length} missing ingredients to Shopping List!`);
+    toast.info(`Added ${itemsToAdd.length} items to your shopping list.`);
   };
 
   return (
@@ -79,7 +81,7 @@ export const RecipeDetailPage: React.FC<RecipeDetailPageProps> = ({
           <button
             type="button"
             className="detail-favorite-btn"
-            onClick={() => setFavorite(!favorite)}
+            onClick={handleToggleFavorite}
             aria-label="Toggle favorite"
           >
             {favorite ? (
@@ -173,4 +175,6 @@ export const RecipeDetailPage: React.FC<RecipeDetailPageProps> = ({
     </div>
   );
 };
+
+export default RecipeDetailPage;
 

@@ -1,14 +1,10 @@
-import React, { useState } from 'react';
-import { Button, Checkbox, Modal, Input, Empty, message } from 'antd';
-import {
-  PlusOutlined,
-  DeleteOutlined,
-  BulbOutlined,
-  ClearOutlined,
-} from '@ant-design/icons';
+import { useState } from 'react';
+import { Button, Checkbox, Modal, Input, Empty } from 'antd';
+import { PlusOutlined, DeleteOutlined, BulbOutlined, ClearOutlined } from '@ant-design/icons';
+import { toast } from '../components/Toast';
 import type { ShoppingItem } from '../types/shoppingList';
 
-interface ShoppingListPageProps {
+interface Props {
   items: ShoppingItem[];
   onToggleItem: (id: string) => void;
   onDeleteItem: (id: string) => void;
@@ -17,28 +13,28 @@ interface ShoppingListPageProps {
   onExploreRecipes: () => void;
 }
 
-export const ShoppingListPage: React.FC<ShoppingListPageProps> = ({
+const ShoppingListPage = ({
   items,
   onToggleItem,
   onDeleteItem,
   onClearAll,
   onAddItem,
   onExploreRecipes,
-}) => {
+}: Props) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState('');
 
   const handleCreateItem = () => {
     if (!newItemName.trim()) {
-      message.warning('Please enter an item name');
+      toast.warning('Please enter an item name');
       return;
     }
     onAddItem(newItemName.trim(), newItemQty.trim() || '1');
     setNewItemName('');
     setNewItemQty('');
     setIsModalOpen(false);
-    message.success('Item added to your shopping list');
+    toast.success('Item added to your shopping list');
   };
 
   const handleClearWithConfirm = () => {
@@ -51,7 +47,7 @@ export const ShoppingListPage: React.FC<ShoppingListPageProps> = ({
       cancelText: 'Cancel',
       onOk() {
         onClearAll();
-        message.info('Shopping list cleared');
+        toast.info('Shopping list cleared');
       },
     });
   };
@@ -186,4 +182,7 @@ export const ShoppingListPage: React.FC<ShoppingListPageProps> = ({
     </div>
   );
 };
+
+export default ShoppingListPage;
+
 

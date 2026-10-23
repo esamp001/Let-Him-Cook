@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
 
-interface HeroSectionProps {
+interface Props {
   onSearch: (ingredients: string) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ onSearch }) => {
+export const HeroSection = ({ onSearch }: Props) => {
   const [query, setQuery] = useState('');
 
   const suggestions = [

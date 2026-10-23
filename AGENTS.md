@@ -248,3 +248,36 @@ backend/
 - Use TypeScript types for request data, database results, and application logic where appropriate.
 - Make changes incrementally and avoid unrelated refactoring.
 - If a new abstraction is necessary, explain briefly why it is needed.
+
+
+## Coding Standards
+
+### Frontend Component & Page Standard
+
+- Do **NOT** use `React.FC` or `React.FunctionComponent`.
+- Explicitly type props directly in the component parameter signature:
+- Use `export default` for pages:
+
+```tsx
+interface Props {
+  // define component props here
+}
+
+const DashboardPage = ({ }: Props) => {
+  return (
+    // ...
+  );
+};
+
+export default DashboardPage;
+```
+
+### Import Statement Standard
+
+- Always write import statements inline on a single line; do not break named imports across multiple lines:
+
+```tsx
+import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined } from '@ant-design/icons';
+```
+
+

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
 import { RecipeCard } from '../components/RecipeCard';
-import { RecipeDetailPage } from './RecipeDetailPage';
+import RecipeDetailPage from './RecipeDetailPage';
 import { mockRecipes } from '../data/mockRecipes';
 import type { Recipe } from '../types/recipe';
 import type { ShoppingItem } from '../types/shoppingList';
 
-interface RecipesPageProps {
+interface Props {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   selectedRecipe: Recipe | null;
@@ -14,13 +14,13 @@ interface RecipesPageProps {
   onAddToShoppingList: (items: ShoppingItem[]) => void;
 }
 
-export const RecipesPage: React.FC<RecipesPageProps> = ({
+const RecipesPage = ({
   searchQuery,
   onSearchChange,
   selectedRecipe,
   onSelectRecipe,
   onAddToShoppingList,
-}) => {
+}: Props) => {
   const [localInput, setLocalInput] = useState(searchQuery);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -123,4 +123,7 @@ export const RecipesPage: React.FC<RecipesPageProps> = ({
     </div>
   );
 };
+
+export default RecipesPage;
+
 

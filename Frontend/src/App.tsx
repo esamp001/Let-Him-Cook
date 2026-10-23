@@ -1,9 +1,11 @@
 import { useState } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
-import { DashboardPage } from './pages/DashboardPage';
-import { RecipesPage } from './pages/RecipesPage';
-import { ShoppingListPage } from './pages/ShoppingListPage';
+import { ToastContainer } from './components/Toast';
+import DashboardPage from './pages/DashboardPage';
+import RecipesPage from './pages/RecipesPage';
+import ShoppingListPage from './pages/ShoppingListPage';
 import type { Recipe } from './types/recipe';
 import type { ShoppingItem } from './types/shoppingList';
 import './App.css';
@@ -19,29 +21,29 @@ const initialShoppingList: ShoppingItem[] = [
 ];
 
 function App() {
-  const [currentTab, setCurrentTab] = useState<'home' | 'recipes' | 'shopping-list'>('home');
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('chicken + potatoes');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(initialShoppingList);
 
-  // Tab change handler
-  const handleTabChange = (tab: 'home' | 'recipes' | 'shopping-list') => {
-    setCurrentTab(tab);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   // Trigger search from Hero or search bar
   const handleSearch = (query: string) => {
     setSearchQuery(query);
-    setSelectedRecipe(null); // return to recipe search grid
-    setCurrentTab('recipes');
+    setSelectedRecipe(null);
+    navigate('/Recipes');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Recipe selection (clicks on a card)
   const handleSelectRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
-    setCurrentTab('recipes');
+    navigate('/Recipes');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleViewAllRecipes = () => {
+    setSelectedRecipe(null);
+    navigate('/Recipes');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -87,59 +89,68 @@ function App() {
     setShoppingList((prev) => [newItem, ...prev]);
   };
 
+  const handleExploreRecipes = () => {
+    setSelectedRecipe(null);
+    navigate('/Recipes');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
     <div className="app-shell">
       {/* Top Navigation Bar */}
-      <Navbar
-        activeTab={currentTab}
-        onTabChange={handleTabChange}
-        shoppingListCount={shoppingList.filter((i) => !i.checked).length}
-      />
+      <Navbar shoppingListCount={shoppingList.filter((i) => !i.checked).length} />
 
       {/* Main Page Body */}
       <main className="app-main-content">
-        {currentTab === 'home' && (
-          <DashboardPage
-            onSearch={handleSearch}
-            onSelectRecipe={handleSelectRecipe}
-            onViewAllRecipes={() => {
-              setSelectedRecipe(null);
-              setCurrentTab('recipes');
-            }}
+        <Routes>
+          <Route path="/" element={<Navigate to="/Home" replace />} />
+          <Route
+            path="/Home"
+            element={
+              <DashboardPage
+                onSearch={handleSearch}
+                onSelectRecipe={handleSelectRecipe}
+                onViewAllRecipes={handleViewAllRecipes}
+              />
+            }
           />
-        )}
-
-        {currentTab === 'recipes' && (
-          <RecipesPage
-            searchQuery={searchQuery}
-            onSearchChange={(q) => setSearchQuery(q)}
-            selectedRecipe={selectedRecipe}
-            onSelectRecipe={setSelectedRecipe}
-            onAddToShoppingList={handleAddToShoppingList}
+          <Route path="/home" element={<Navigate to="/Home" replace />} />
+          <Route
+            path="/Recipes"
+            element={
+              <RecipesPage
+                searchQuery={searchQuery}
+                onSearchChange={(q) => setSearchQuery(q)}
+                selectedRecipe={selectedRecipe}
+                onSelectRecipe={setSelectedRecipe}
+                onAddToShoppingList={handleAddToShoppingList}
+              />
+            }
           />
-        )}
-
-        {currentTab === 'shopping-list' && (
-          <ShoppingListPage
-            items={shoppingList}
-            onToggleItem={handleToggleShoppingItem}
-            onDeleteItem={handleDeleteShoppingItem}
-            onClearAll={handleClearShoppingList}
-            onAddItem={handleAddCustomShoppingItem}
-            onExploreRecipes={() => {
-              setSelectedRecipe(null);
-              setCurrentTab('recipes');
-            }}
+          <Route path="/recipes" element={<Navigate to="/Recipes" replace />} />
+          <Route
+            path="/Shopping-List"
+            element={
+              <ShoppingListPage
+                items={shoppingList}
+                onToggleItem={handleToggleShoppingItem}
+                onDeleteItem={handleDeleteShoppingItem}
+                onClearAll={handleClearShoppingList}
+                onAddItem={handleAddCustomShoppingItem}
+                onExploreRecipes={handleExploreRecipes}
+              />
+            }
           />
-        )}
+          <Route path="/shopping-list" element={<Navigate to="/Shopping-List" replace />} />
+          <Route path="*" element={<Navigate to="/Home" replace />} />
+        </Routes>
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileNav
-        activeTab={currentTab}
-        onTabChange={handleTabChange}
-        shoppingListCount={shoppingList.filter((i) => !i.checked).length}
-      />
+      <MobileNav shoppingListCount={shoppingList.filter((i) => !i.checked).length} />
+
+      {/* Global Toast Notifications */}
+      <ToastContainer />
     </div>
   );
 }

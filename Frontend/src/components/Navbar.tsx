@@ -1,23 +1,27 @@
-import React from 'react';
 import { Avatar, Badge } from 'antd';
 import { UserOutlined } from '@ant-design/icons';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-interface NavbarProps {
-  activeTab: 'home' | 'recipes' | 'shopping-list';
-  onTabChange: (tab: 'home' | 'recipes' | 'shopping-list') => void;
+interface Props {
   shoppingListCount?: number;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  activeTab = 'home',
-  onTabChange,
+export const Navbar = ({
   shoppingListCount = 0,
-}) => {
+}: Props) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname.toLowerCase();
+
+  const isHome = path === '/' || path === '/home';
+  const isRecipes = path.startsWith('/recipes');
+  const isShoppingList = path.startsWith('/shopping-list');
+
   return (
     <header className="navbar-header">
       <div className="navbar-container">
         {/* Brand Logo */}
-        <div className="navbar-logo" onClick={() => onTabChange('home')}>
+        <div className="navbar-logo" onClick={() => navigate('/Home')}>
           <span className="logo-icon" aria-label="Chef Hat">
             <svg
               width="28"
@@ -42,22 +46,22 @@ export const Navbar: React.FC<NavbarProps> = ({
         <nav className="navbar-nav">
           <button
             type="button"
-            className={`nav-link ${activeTab === 'home' ? 'active' : ''}`}
-            onClick={() => onTabChange('home')}
+            className={`nav-link ${isHome ? 'active' : ''}`}
+            onClick={() => navigate('/Home')}
           >
             Home
           </button>
           <button
             type="button"
-            className={`nav-link ${activeTab === 'recipes' ? 'active' : ''}`}
-            onClick={() => onTabChange('recipes')}
+            className={`nav-link ${isRecipes ? 'active' : ''}`}
+            onClick={() => navigate('/Recipes')}
           >
             Recipes
           </button>
           <button
             type="button"
-            className={`nav-link ${activeTab === 'shopping-list' ? 'active' : ''}`}
-            onClick={() => onTabChange('shopping-list')}
+            className={`nav-link ${isShoppingList ? 'active' : ''}`}
+            onClick={() => navigate('/Shopping-List')}
           >
             Shopping List
             {shoppingListCount > 0 && (

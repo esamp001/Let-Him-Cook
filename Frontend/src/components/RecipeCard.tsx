@@ -1,19 +1,14 @@
 import React, { useState } from 'react';
 import { Card } from 'antd';
-import {
-  ClockCircleOutlined,
-  HeartOutlined,
-  HeartFilled,
-  FireOutlined,
-} from '@ant-design/icons';
+import { ClockCircleOutlined, HeartOutlined, HeartFilled, FireOutlined } from '@ant-design/icons';
 import type { Recipe } from '../types/recipe';
 
-interface RecipeCardProps {
+interface Props {
   recipe: Recipe;
   onSelect?: (recipe: Recipe) => void;
 }
 
-export const RecipeCard: React.FC<RecipeCardProps> = ({ recipe, onSelect }) => {
+export const RecipeCard = ({ recipe, onSelect }: Props) => {
   const [favorite, setFavorite] = useState(recipe.isFavorite ?? false);
 
   const toggleFavorite = (e: React.MouseEvent) => {

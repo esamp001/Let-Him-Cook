@@ -1,29 +1,28 @@
-import React from 'react';
-import {
-  HomeOutlined,
-  BookOutlined,
-  CheckSquareOutlined,
-  UserOutlined,
-} from '@ant-design/icons';
+import { HomeOutlined, BookOutlined, CheckSquareOutlined, UserOutlined } from '@ant-design/icons';
 import { Badge } from 'antd';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-interface MobileNavProps {
-  activeTab: 'home' | 'recipes' | 'shopping-list';
-  onTabChange: (tab: 'home' | 'recipes' | 'shopping-list') => void;
+interface Props {
   shoppingListCount?: number;
 }
 
-export const MobileNav: React.FC<MobileNavProps> = ({
-  activeTab,
-  onTabChange,
+export const MobileNav = ({
   shoppingListCount = 0,
-}) => {
+}: Props) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const path = location.pathname.toLowerCase();
+
+  const isHome = path === '/' || path === '/home';
+  const isRecipes = path.startsWith('/recipes');
+  const isShoppingList = path.startsWith('/shopping-list');
+
   return (
     <nav className="mobile-bottom-nav">
       <button
         type="button"
-        className={`mobile-nav-item ${activeTab === 'home' ? 'active' : ''}`}
-        onClick={() => onTabChange('home')}
+        className={`mobile-nav-item ${isHome ? 'active' : ''}`}
+        onClick={() => navigate('/Home')}
       >
         <HomeOutlined className="mobile-nav-icon" />
         <span className="mobile-nav-label">Home</span>
@@ -31,8 +30,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
       <button
         type="button"
-        className={`mobile-nav-item ${activeTab === 'recipes' ? 'active' : ''}`}
-        onClick={() => onTabChange('recipes')}
+        className={`mobile-nav-item ${isRecipes ? 'active' : ''}`}
+        onClick={() => navigate('/Recipes')}
       >
         <BookOutlined className="mobile-nav-icon" />
         <span className="mobile-nav-label">Recipes</span>
@@ -40,8 +39,8 @@ export const MobileNav: React.FC<MobileNavProps> = ({
 
       <button
         type="button"
-        className={`mobile-nav-item ${activeTab === 'shopping-list' ? 'active' : ''}`}
-        onClick={() => onTabChange('shopping-list')}
+        className={`mobile-nav-item ${isShoppingList ? 'active' : ''}`}
+        onClick={() => navigate('/Shopping-List')}
       >
         <Badge
           count={shoppingListCount}

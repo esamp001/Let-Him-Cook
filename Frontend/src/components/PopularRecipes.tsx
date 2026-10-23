@@ -1,18 +1,17 @@
-import React from 'react';
 import { ArrowRightOutlined } from '@ant-design/icons';
 import { RecipeCard } from './RecipeCard';
 import { mockRecipes } from '../data/mockRecipes';
 import type { Recipe } from '../types/recipe';
 
-interface PopularRecipesProps {
+interface Props {
   onSelectRecipe?: (recipe: Recipe) => void;
   onViewAll?: () => void;
 }
 
-export const PopularRecipes: React.FC<PopularRecipesProps> = ({
+export const PopularRecipes = ({
   onSelectRecipe,
   onViewAll,
-}) => {
+}: Props) => {
   // First 4 recipes for the popular dashboard section
   const popular = mockRecipes.slice(0, 4);
 

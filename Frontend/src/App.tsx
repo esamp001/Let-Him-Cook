@@ -1,122 +1,147 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import { Navbar } from './components/Navbar';
+import { MobileNav } from './components/MobileNav';
+import { DashboardPage } from './pages/DashboardPage';
+import { RecipesPage } from './pages/RecipesPage';
+import { ShoppingListPage } from './pages/ShoppingListPage';
+import type { Recipe } from './types/recipe';
+import type { ShoppingItem } from './types/shoppingList';
+import './App.css';
+
+// Initial shopping items based on the design mockup
+const initialShoppingList: ShoppingItem[] = [
+  { id: '1', name: 'Chicken breast', quantity: '500 g', checked: false },
+  { id: '2', name: 'Potatoes', quantity: '4 medium', checked: false },
+  { id: '3', name: 'Onion', quantity: '1', checked: false },
+  { id: '4', name: 'Garlic', quantity: '3 cloves', checked: false },
+  { id: '5', name: 'Chicken broth', quantity: '1 L', checked: false },
+  { id: '6', name: 'Fresh parsley (optional)', quantity: '1 bunch', checked: false },
+];
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentTab, setCurrentTab] = useState<'home' | 'recipes' | 'shopping-list'>('home');
+  const [searchQuery, setSearchQuery] = useState('chicken + potatoes');
+  const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(initialShoppingList);
+
+  // Tab change handler
+  const handleTabChange = (tab: 'home' | 'recipes' | 'shopping-list') => {
+    setCurrentTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Trigger search from Hero or search bar
+  const handleSearch = (query: string) => {
+    setSearchQuery(query);
+    setSelectedRecipe(null); // return to recipe search grid
+    setCurrentTab('recipes');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Recipe selection (clicks on a card)
+  const handleSelectRecipe = (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    setCurrentTab('recipes');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Add items from recipe to shopping list
+  const handleAddToShoppingList = (items: ShoppingItem[]) => {
+    setShoppingList((prev) => {
+      // Append only items that are not already in the list
+      const existingNames = new Set(prev.map((i) => i.name.toLowerCase()));
+      const filteredNew = items.filter(
+        (item) => !existingNames.has(item.name.toLowerCase())
+      );
+      return [...prev, ...filteredNew];
+    });
+  };
+
+  // Shopping list item toggle
+  const handleToggleShoppingItem = (id: string) => {
+    setShoppingList((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
+  // Delete shopping item
+  const handleDeleteShoppingItem = (id: string) => {
+    setShoppingList((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  // Clear shopping list
+  const handleClearShoppingList = () => {
+    setShoppingList([]);
+  };
+
+  // Add custom shopping item
+  const handleAddCustomShoppingItem = (name: string, quantity: string) => {
+    const newItem: ShoppingItem = {
+      id: crypto.randomUUID(),
+      name,
+      quantity,
+      checked: false,
+    };
+    setShoppingList((prev) => [newItem, ...prev]);
+  };
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app-shell">
+      {/* Top Navigation Bar */}
+      <Navbar
+        activeTab={currentTab}
+        onTabChange={handleTabChange}
+        shoppingListCount={shoppingList.filter((i) => !i.checked).length}
+      />
 
-      <div className="ticks"></div>
+      {/* Main Page Body */}
+      <main className="app-main-content">
+        {currentTab === 'home' && (
+          <DashboardPage
+            onSearch={handleSearch}
+            onSelectRecipe={handleSelectRecipe}
+            onViewAllRecipes={() => {
+              setSelectedRecipe(null);
+              setCurrentTab('recipes');
+            }}
+          />
+        )}
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+        {currentTab === 'recipes' && (
+          <RecipesPage
+            searchQuery={searchQuery}
+            onSearchChange={(q) => setSearchQuery(q)}
+            selectedRecipe={selectedRecipe}
+            onSelectRecipe={setSelectedRecipe}
+            onAddToShoppingList={handleAddToShoppingList}
+          />
+        )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+        {currentTab === 'shopping-list' && (
+          <ShoppingListPage
+            items={shoppingList}
+            onToggleItem={handleToggleShoppingItem}
+            onDeleteItem={handleDeleteShoppingItem}
+            onClearAll={handleClearShoppingList}
+            onAddItem={handleAddCustomShoppingItem}
+            onExploreRecipes={() => {
+              setSelectedRecipe(null);
+              setCurrentTab('recipes');
+            }}
+          />
+        )}
+      </main>
+
+      {/* Mobile Bottom Navigation Bar */}
+      <MobileNav
+        activeTab={currentTab}
+        onTabChange={handleTabChange}
+        shoppingListCount={shoppingList.filter((i) => !i.checked).length}
+      />
+    </div>
+  );
 }
 
-export default App
+export default App;

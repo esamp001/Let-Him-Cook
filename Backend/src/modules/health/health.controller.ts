@@ -1,0 +1,10 @@
+import type { RequestHandler } from 'express';
+
+export const getHealth: RequestHandler = (_request, response) => {
+  response.status(200).json({
+    data: {
+      status: 'ok',
+      timestamp: new Date().toISOString(),
+    },
+  });
+};

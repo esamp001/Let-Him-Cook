@@ -2,15 +2,9 @@ import { useState, type CSSProperties } from 'react';
 import { Button, Checkbox } from 'antd';
 import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined} from '@ant-design/icons';
 import { toast } from '../components/Toast';
-import type { Recipe } from '../types/recipe';
-import type { ShoppingItem } from '../types/shoppingList';
+import type { ShoppingItem } from '../types/interfaces/ShoppingItem';
+import type { RecipeDetailPageProps } from '../types/interfaces/RecipeDetailPageProps';
 import { culinaryPalette } from '../theme/themeConfig';
-
-interface Props {
-  recipe: Recipe;
-  onBack: () => void;
-  onAddToShoppingList: (items: ShoppingItem[]) => void;
-}
 
 const styles: Record<string, CSSProperties> = {
   container: { maxWidth: 900, margin: '0 auto', padding: '24px 24px 60px' }, backBar: { marginBottom: 16 }, backButton: { background: 'none', border: 'none', fontSize: 14, fontWeight: 600, color: culinaryPalette.primary, cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 0' }, hero: { width: '100%', height: 380, borderRadius: 20, overflow: 'hidden', marginBottom: 24, boxShadow: '0 10px 25px rgba(0, 0, 0, 0.08)' }, image: { width: '100%', height: '100%', objectFit: 'cover' }, header: { marginBottom: 32 }, titleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }, title: { fontSize: 32, fontWeight: 800, color: culinaryPalette.text, margin: 0 }, favoriteButton: { background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}`, borderRadius: '50%', width: 44, height: 44, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, cursor: 'pointer' }, meta: { display: 'flex', alignItems: 'center', gap: 16, marginBottom: 16 }, metaBadge: { display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 14, fontWeight: 600, color: culinaryPalette.textSecondary, backgroundColor: culinaryPalette.surfaceMuted, padding: '6px 14px', borderRadius: 9999 }, description: { fontSize: 16, lineHeight: 1.6, color: culinaryPalette.textSecondary, margin: 0 }, grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 40 }, card: { backgroundColor: culinaryPalette.surface, borderRadius: 16, border: `1px solid ${culinaryPalette.border}`, padding: 24, boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)' }, titleRowColumn: { display: 'flex', flexDirection: 'column', marginBottom: 16 }, columnTitle: { fontSize: 20, fontWeight: 700, color: culinaryPalette.text, margin: '0 0 4px' }, columnSubtitle: { fontSize: 12, color: culinaryPalette.textMuted }, ingredients: { display: 'flex', flexDirection: 'column', gap: 10 }, ingredientRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '10px 12px', borderRadius: 8, border: `1px solid ${culinaryPalette.borderSubtle}`, backgroundColor: culinaryPalette.pageBackground, cursor: 'pointer' }, ownedIngredientRow: { backgroundColor: culinaryPalette.successSurface, borderColor: culinaryPalette.successBackground }, ingredientInfo: { flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }, ingredientName: { fontSize: 14, fontWeight: 500, color: culinaryPalette.textSecondary }, optionalTag: { color: culinaryPalette.textSubtle, fontSize: 12, fontWeight: 400 }, ingredientQuantity: { fontSize: 13, color: culinaryPalette.textMuted }, pantryBadge: { fontSize: 11, fontWeight: 600, color: culinaryPalette.success, backgroundColor: culinaryPalette.successBackground, padding: '2px 8px', borderRadius: 9999 }, steps: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 14 }, step: { display: 'flex', alignItems: 'flex-start', gap: 12 }, stepNumber: { fontWeight: 700, color: culinaryPalette.primary, fontSize: 15, minWidth: 20 }, stepText: { fontSize: 14, lineHeight: 1.5, color: culinaryPalette.textSecondary }, ctaBar: { textAlign: 'center' }, ctaButton: { width: '100%', maxWidth: 420, height: 52, fontSize: 16, fontWeight: 700 },
@@ -20,7 +14,7 @@ const RecipeDetailPage = ({
   recipe,
   onBack,
   onAddToShoppingList,
-}: Props) => {
+}: RecipeDetailPageProps) => {
 
   const missingIngredientsCount = recipe.ingredients.filter((ing) => !ing.isOwned).map((ing) => ing.name)
 
@@ -99,10 +93,10 @@ const RecipeDetailPage = ({
 
         <div style={styles.meta}>
           <span style={styles.metaBadge}>
-            <ClockCircleOutlined /> {recipe.cookingTimeMinutes} min
+            <ClockCircleOutlined /> {recipe.cookingTimeMinutes ? `${recipe.cookingTimeMinutes} min` : 'Time not listed'}
           </span>
           <span style={styles.metaBadge}>
-            <FireOutlined /> {recipe.difficulty}
+            <FireOutlined /> {recipe.difficulty ?? 'Difficulty not listed'}
           </span>
         </div>
 

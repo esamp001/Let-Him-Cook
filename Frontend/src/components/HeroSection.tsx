@@ -1,14 +1,68 @@
-import { useState, type FormEvent } from 'react';
-import { SearchOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { useState, type CSSProperties, type FormEvent } from 'react';
+import { SearchOutlined, ArrowRightOutlined, DownOutlined, SlidersOutlined } from '@ant-design/icons';
+import { Dropdown, type MenuProps } from 'antd';
+import type { CuisinePreference } from '../types/ai';
+import type { HeroSectionProps } from '../types/interfaces/HeroSectionProps';
 import heroImg from '../assets/Rustic Herb Chicken Bowl with Fresh Garnishes.png';
 import './HeroSection.css';
 
-interface Props {
-  onSearch: (ingredients: string) => void;
-}
+const searchBarStyle: CSSProperties = {
+  paddingLeft: 4,
+};
 
-export const HeroSection = ({ onSearch }: Props) => {
+const cuisineFilterStyle: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  gap: 8,
+  minWidth: 118,
+  height: 48,
+  padding: '0 12px',
+  borderRadius: 9999,
+  border: 'none',
+  backgroundColor: '#EFF6F1',
+  color: '#0D3B2E',
+  flexShrink: 0,
+  cursor: 'pointer',
+};
+
+const cuisineTextStyle: CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  lineHeight: 1.05,
+  flex: 1,
+};
+
+const cuisineLabelStyle: CSSProperties = {
+  fontSize: 9,
+  fontWeight: 500,
+  color: '#7A8C84',
+};
+
+const cuisineValueStyle: CSSProperties = {
+  fontSize: 11,
+  fontWeight: 700,
+  color: '#0D3B2E',
+};
+
+const cuisineLabels: Record<CuisinePreference, string> = {
+  any: 'Any cuisine',
+  filipino: 'Filipino',
+  asian: 'Asian',
+  italian: 'Italian',
+  western: 'Western',
+};
+
+const getCuisineOptions = (selectedCuisine: CuisinePreference): MenuProps['items'] => (
+  Object.entries(cuisineLabels).map(([value, label]) => ({
+    key: value,
+    label: <span style={{ color: value === selectedCuisine ? '#FFFFFF' : '#374151' }}>{label}</span>,
+  }))
+);
+
+export const HeroSection = ({ onSearch }: HeroSectionProps) => {
   const [query, setQuery] = useState('');
+  const [cuisinePreference, setCuisinePreference] = useState<CuisinePreference>('any');
 
   const suggestions = [
     'chicken + potatoes',
@@ -19,13 +73,13 @@ export const HeroSection = ({ onSearch }: Props) => {
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (query.trim()) {
-      onSearch(query.trim());
+      onSearch(query.trim(), cuisinePreference);
     }
   };
 
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);
-    onSearch(suggestion);
+    onSearch(suggestion, cuisinePreference);
   };
 
   return (
@@ -49,8 +103,28 @@ export const HeroSection = ({ onSearch }: Props) => {
 
           {/* Search Bar Pill */}
           <form className="hero-search-form" onSubmit={handleSubmit}>
-            <div className="search-bar-wrapper">
-              <span className="search-icon-circle">
+            <div className="search-bar-wrapper" style={searchBarStyle}>
+              <Dropdown
+                trigger={['click']}
+                placement="bottomLeft"
+                menu={{
+                  items: getCuisineOptions(cuisinePreference),
+                  selectable: true,
+                  selectedKeys: [cuisinePreference],
+                  onClick: ({ key }) => setCuisinePreference(key as CuisinePreference),
+                }}
+                styles={{ root: { minWidth: 160 } }}
+              >
+                <button type="button" aria-label="Choose cuisine preference" style={cuisineFilterStyle}>
+                  <SlidersOutlined style={{ fontSize: 16 }} />
+                  <span style={cuisineTextStyle}>
+                    <span style={cuisineLabelStyle}>Cuisine</span>
+                    <strong style={cuisineValueStyle}>{cuisineLabels[cuisinePreference]}</strong>
+                  </span>
+                  <DownOutlined style={{ fontSize: 10 }} />
+                </button>
+              </Dropdown>
+              <span className="search-icon-circle" style={{ marginLeft: 14 }}>
                 <SearchOutlined />
               </span>
               <input

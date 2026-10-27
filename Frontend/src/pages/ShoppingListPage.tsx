@@ -2,17 +2,8 @@ import { useState, type CSSProperties } from 'react';
 import { Button, Checkbox, Modal, Input, Empty } from 'antd';
 import { PlusOutlined, DeleteOutlined, BulbOutlined, ClearOutlined } from '@ant-design/icons';
 import { toast } from '../components/Toast';
-import type { ShoppingItem } from '../types/shoppingList';
+import type { ShoppingListPageProps } from '../types/interfaces/ShoppingListPageProps';
 import { culinaryPalette } from '../theme/themeConfig';
-
-interface Props {
-  items: ShoppingItem[];
-  onToggleItem: (id: string) => void;
-  onDeleteItem: (id: string) => void;
-  onClearAll: () => void;
-  onAddItem: (name: string, quantity: string) => void;
-  onExploreRecipes: () => void;
-}
 
 const styles: Record<string, CSSProperties> = {
   wrapper: { padding: '32px 0 64px' },
@@ -46,7 +37,7 @@ const ShoppingListPage = ({
   onClearAll,
   onAddItem,
   onExploreRecipes,
-}: Props) => {
+}: ShoppingListPageProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState('');

@@ -1,17 +1,16 @@
 import { Badge } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
+import type { NavbarProps } from '../types/interfaces/NavbarProps';
 import './Navbar.css';
 
-interface Props {
-  shoppingListCount?: number;
-}
-
-export const Navbar = ({ shoppingListCount = 0 }: Props) => {
+export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
   const isHome = path === '/' || path === '/home';
+  const isChat = path.startsWith('/chat');
+  const isMyRecipes = path.startsWith('/my-recipes');
   const isRecipes = path.startsWith('/recipes');
   const isShoppingList = path.startsWith('/shopping-list');
 
@@ -70,6 +69,13 @@ export const Navbar = ({ shoppingListCount = 0 }: Props) => {
           </button>
           <button
             type="button"
+            className={`nav-link ${isChat ? 'active' : ''}`}
+            onClick={() => navigate('/Chat')}
+          >
+            Chat
+          </button>
+          <button
+            type="button"
             className={`nav-link ${isRecipes ? 'active' : ''}`}
             onClick={() => navigate('/Recipes')}
           >
@@ -95,9 +101,9 @@ export const Navbar = ({ shoppingListCount = 0 }: Props) => {
         <div className="navbar-user">
           <button
             type="button"
-            className="user-avatar-btn"
-            aria-label="User Profile"
-            onClick={() => alert('Profile feature coming soon!')}
+            className={`user-avatar-btn ${isMyRecipes ? 'active' : ''}`}
+            aria-label="My recipes"
+            onClick={() => navigate('/My-Recipes')}
           >
             <svg
               width="24"

@@ -1,20 +1,18 @@
-import { HomeOutlined, BookOutlined, CheckSquareOutlined, UserOutlined } from '@ant-design/icons';
+import { BookOutlined, CheckSquareOutlined, HomeOutlined, MessageOutlined } from '@ant-design/icons';
 import { Badge } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
+import type { MobileNavProps } from '../types/interfaces/MobileNavProps';
 import './MobileNav.css';
-
-interface Props {
-  shoppingListCount?: number;
-}
 
 export const MobileNav = ({
   shoppingListCount = 0,
-}: Props) => {
+}: MobileNavProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const path = location.pathname.toLowerCase();
 
   const isHome = path === '/' || path === '/home';
+  const isChat = path.startsWith('/chat');
   const isRecipes = path.startsWith('/recipes');
   const isShoppingList = path.startsWith('/shopping-list');
 
@@ -27,6 +25,15 @@ export const MobileNav = ({
       >
         <HomeOutlined className="mobile-nav-icon" />
         <span className="mobile-nav-label">Home</span>
+      </button>
+
+      <button
+        type="button"
+        className={`mobile-nav-item ${isChat ? 'active' : ''}`}
+        onClick={() => navigate('/Chat')}
+      >
+        <MessageOutlined className="mobile-nav-icon" />
+        <span className="mobile-nav-label">Chat</span>
       </button>
 
       <button
@@ -52,15 +59,6 @@ export const MobileNav = ({
           <CheckSquareOutlined className="mobile-nav-icon" />
         </Badge>
         <span className="mobile-nav-label">Shopping List</span>
-      </button>
-
-      <button
-        type="button"
-        className="mobile-nav-item"
-        onClick={() => alert('Profile feature coming in a future update!')}
-      >
-        <UserOutlined className="mobile-nav-icon" />
-        <span className="mobile-nav-label">Profile</span>
       </button>
     </nav>
   );

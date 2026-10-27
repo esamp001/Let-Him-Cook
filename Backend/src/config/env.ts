@@ -15,4 +15,10 @@ export const env = {
   port: parsePort(process.env.PORT),
   databaseUrl: process.env.DATABASE_URL,
   corsOrigin: process.env.CORS_ORIGIN ?? 'http://localhost:5173',
+  ollamaBaseUrl: process.env.OLLAMA_BASE_URL ?? 'http://127.0.0.1:11434',
+  ollamaModel: process.env.OLLAMA_MODEL ?? 'qwen3:4b',
+  // Recipe imports are extraction work, so they can use a smaller local model.
+  // Leaving this unset keeps the existing model and behaviour unchanged.
+  ollamaImportModel: process.env.OLLAMA_IMPORT_MODEL ?? process.env.OLLAMA_MODEL ?? 'qwen3:4b',
+  theMealDbBaseUrl: process.env.THEMEALDB_BASE_URL ?? 'https://www.themealdb.com/api/json/v1/1',
 };

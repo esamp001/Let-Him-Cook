@@ -4,4 +4,3 @@ export interface ShoppingItem {
   quantity: string;
   checked: boolean;
 }
-

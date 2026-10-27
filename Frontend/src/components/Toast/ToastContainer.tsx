@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
-import type { ToastItem } from './Toast.types';
+import type { ToastItem } from '../../types/interfaces/ToastItem';
+import type { ToastContainerProps } from '../../types/interfaces/ToastContainerProps';
 import { toast } from './toastService';
 import { ToastItemView } from './ToastItemView';
 import './Toast.css';
 
-interface Props {
-  className?: string;
-}
-
-export const ToastContainer = ({ className = '' }: Props) => {
+export const ToastContainer = ({ className = '' }: ToastContainerProps) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   useEffect(() => {

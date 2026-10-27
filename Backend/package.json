@@ -8,9 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "check": "tsc --noEmit",
-    "migrate:latest": "knex --knexfile knexfile.ts migrate:latest",
-    "migrate:rollback": "knex --knexfile knexfile.ts migrate:rollback",
-    "seed:run": "knex --knexfile knexfile.ts seed:run"
+    "migrate:latest": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:latest",
+    "migrate:rollback": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts migrate:rollback",
+    "seed:run": "tsx node_modules/knex/bin/cli.js --knexfile knexfile.ts seed:run"
   },
   "dependencies": {
     "cors": "^2.8.5",

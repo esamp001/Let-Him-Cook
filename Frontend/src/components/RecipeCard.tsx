@@ -1,15 +1,10 @@
 import React, { useState } from 'react';
 import { Card } from 'antd';
 import { ClockCircleOutlined, HeartOutlined, HeartFilled, FireOutlined } from '@ant-design/icons';
-import type { Recipe } from '../types/recipe';
+import type { RecipeCardProps } from '../types/interfaces/RecipeCardProps';
 import './RecipeCard.css';
 
-interface Props {
-  recipe: Recipe;
-  onSelect?: (recipe: Recipe) => void;
-}
-
-export const RecipeCard = ({ recipe, onSelect }: Props) => {
+export const RecipeCard = ({ recipe, onSelect }: RecipeCardProps) => {
   const [favorite, setFavorite] = useState(recipe.isFavorite ?? false);
 
   const toggleFavorite = (e: React.MouseEvent) => {
@@ -50,11 +45,11 @@ export const RecipeCard = ({ recipe, onSelect }: Props) => {
         <div className="recipe-card-meta">
           <span className="meta-item">
             <ClockCircleOutlined className="meta-icon" />
-            {recipe.cookingTimeMinutes} min
+            {recipe.cookingTimeMinutes ? `${recipe.cookingTimeMinutes} min` : 'Time not listed'}
           </span>
           <span className="meta-item">
             <FireOutlined className="meta-icon" />
-            {recipe.difficulty}
+            {recipe.difficulty ?? 'Difficulty not listed'}
           </span>
         </div>
       </div>

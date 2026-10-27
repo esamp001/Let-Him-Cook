@@ -1,4 +1,6 @@
-import type { ToastItem, ToastOptions, ToastType } from './Toast.types';
+import type { ToastType } from './Toast.types';
+import type { ToastItem } from '../../types/interfaces/ToastItem';
+import type { ToastOptions } from '../../types/interfaces/ToastOptions';
 
 type ToastListener = (toasts: ToastItem[]) => void;
 

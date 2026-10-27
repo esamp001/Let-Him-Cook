@@ -1,18 +1,12 @@
 import { HeroSection } from '../components/HeroSection';
 import { PopularRecipes } from '../components/PopularRecipes';
-import type { Recipe } from '../types/recipe';
-
-interface Props {
-  onSearch: (ingredients: string) => void;
-  onSelectRecipe: (recipe: Recipe) => void;
-  onViewAllRecipes: () => void;
-}
+import type { DashboardPageProps } from '../types/interfaces/DashboardPageProps';
 
 const DashboardPage = ({
   onSearch,
   onSelectRecipe,
   onViewAllRecipes,
-}: Props) => {
+}: DashboardPageProps) => {
   return (
     <div className="dashboard-content">
       <HeroSection onSearch={onSearch} />

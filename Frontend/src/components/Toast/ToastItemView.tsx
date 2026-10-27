@@ -1,11 +1,6 @@
-import type { ToastItem } from './Toast.types';
+import type { ToastItemViewProps } from '../../types/interfaces/ToastItemViewProps';
 
-interface Props {
-  item: ToastItem;
-  onDismiss: (id: string) => void;
-}
-
-export const ToastItemView = ({ item, onDismiss }: Props) => {
+export const ToastItemView = ({ item, onDismiss }: ToastItemViewProps) => {
   const renderIcon = () => {
     switch (item.type) {
       case 'success':

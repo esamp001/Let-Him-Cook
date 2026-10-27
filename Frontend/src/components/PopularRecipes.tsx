@@ -1,18 +1,13 @@
 import { ArrowRightOutlined } from '@ant-design/icons';
 import { RecipeCard } from './RecipeCard';
 import { mockRecipes } from '../data/mockRecipes';
-import type { Recipe } from '../types/recipe';
+import type { PopularRecipesProps } from '../types/interfaces/PopularRecipesProps';
 import './PopularRecipes.css';
-
-interface Props {
-  onSelectRecipe?: (recipe: Recipe) => void;
-  onViewAll?: () => void;
-}
 
 export const PopularRecipes = ({
   onSelectRecipe,
   onViewAll,
-}: Props) => {
+}: PopularRecipesProps) => {
   // First 4 recipes for the popular dashboard section
   const popular = mockRecipes.slice(0, 4);
 

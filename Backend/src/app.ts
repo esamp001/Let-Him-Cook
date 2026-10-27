@@ -7,6 +7,7 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { notFound } from './middleware/notFound.js';
 import { aiRouter } from './modules/ai/ai.routes.js';
 import { healthRouter } from './modules/health/health.routes.js';
+import { recipeRouter } from './modules/recipes/recipe.routes.js';
 
 export const app = express();
 
@@ -17,6 +18,7 @@ app.use(morgan(env.nodeEnv === 'production' ? 'combined' : 'dev'));
 
 app.use('/api/v1/health', healthRouter);
 app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/recipes', recipeRouter);
 
 app.use(notFound);
 app.use(errorHandler);

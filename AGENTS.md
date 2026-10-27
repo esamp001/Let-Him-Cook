@@ -358,6 +358,10 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
 
 ## Coding Standards
 
+- Before planning or changing code in this repository, read this entire section, including every subsection and example. Use the `follow-my-coding` skill to review applicable rules before editing and check the finished changes against them.
+- Keep code simple and direct. Avoid redundant intermediate variables or extra layers that only rename or pass along the same value; create a variable when it makes the code clearer, is reused, or holds a changed result.
+- Before adding or changing code, inspect comparable existing files and follow their established structure, naming, validation, error-handling, and formatting patterns. Copy the relevant existing approach for consistency unless it does not fit the new requirement or conflicts with these standards; when deviating, keep the alternative minimal and explain why it is needed.
+
 ### Database Migration Standard
 
 - Create and modify schema through Knex's schema builder (`knex.schema`, `table`, and column helpers) by default.
@@ -382,6 +386,10 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
 - Place reusable error factories and type guards in `Backend/src/back-end-helpers/` and import them only where needed.
 - Do not introduce custom error classes or an error-class hierarchy unless a concrete requirement cannot be expressed clearly with the functional approach.
 - Validate every incoming request body, route parameter, and query parameter with `safeParse` before using it. After a successful validation check, immediately destructure `parsedRequest.data` and use those validated values instead of accessing `request.body` or repeating `parsedRequest.data.field`.
+- Keep one surrounding `try/catch` for a controller operation. Do not put another `try/catch` inside it for each awaited call; let a rejected call reach the surrounding catch.
+- Validate data at the boundary that reads it: PostgreSQL recipe rows in the repository and TheMealDB meal records in the provider client. Skip an individual recipe missing required details such as ingredients or cooking steps; do not treat an empty collection as a provider failure. Let failed requests and invalid top-level provider responses reach the surrounding error handler.
+- Use inline `if` conditions and `throw new Error(...)` when a controller-owned result violates its contract. Do not repeat repository or provider-client validation in the controller.
+- When a controller computes values that it passes in the response, declare those result variables with `let` in the request handler before the surrounding `try`, assign them inside the `try`, and then use them in the response. Give arrays explicit types when needed. Keep these variables inside the handler, never at module scope where requests could share them.
 
 ### TypeScript Declaration and Naming Standard
 

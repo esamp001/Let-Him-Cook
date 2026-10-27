@@ -4,6 +4,10 @@ import { mealDbResponseSchema } from './recipe.schemas.js';
 import type { ExternalRecipe } from './interfaces/ExternalRecipe.js';
 
 let ingredientNamesPromise: Promise<string[]> | null = null;
+let browseRecipesCache: { expiresAt: number; recipes: ExternalRecipe[] } | null = null;
+let browseRecipesPromise: Promise<ExternalRecipe[]> | null = null;
+const browseCacheTtlMs = 60 * 60 * 1_000;
+const mealDbAlphabet = 'abcdefghijklmnopqrstuvwxyz';
 
 const getMeals = async (path: string) => {
   const response = await fetch(new URL(path, `${env.theMealDbBaseUrl}/`));
@@ -47,6 +51,35 @@ const searchMealSummariesByIngredient = async (requestedIngredient: string) => {
   }
 
   return summaries;
+};
+
+export const listTheMealDbRecipes = async (): Promise<ExternalRecipe[]> => {
+  if (browseRecipesCache && browseRecipesCache.expiresAt > Date.now()) return browseRecipesCache.recipes;
+  if (browseRecipesPromise) return browseRecipesPromise;
+
+  browseRecipesPromise = (async () => {
+    const recipes: ExternalRecipe[] = [];
+    const seenIds = new Set<string>();
+
+    for (const letter of mealDbAlphabet) {
+      const meals = await getMeals(`search.php?f=${letter}`);
+      for (const meal of meals) {
+        const recipe = toExternalRecipe(meal);
+        if (!recipe || recipe.ingredients.length === 0 || recipe.steps.length === 0 || seenIds.has(recipe.id)) continue;
+        seenIds.add(recipe.id);
+        recipes.push(recipe);
+      }
+    }
+
+    browseRecipesCache = { expiresAt: Date.now() + browseCacheTtlMs, recipes };
+    return recipes;
+  })();
+
+  try {
+    return await browseRecipesPromise;
+  } finally {
+    browseRecipesPromise = null;
+  }
 };
 
 export const searchTheMealDbRecipes = async (ingredients: string[], cuisine = 'any'): Promise<ExternalRecipe[]> => {
@@ -96,7 +129,7 @@ export const searchTheMealDbRecipes = async (ingredients: string[], cuisine = 'a
     details.push(meals[0] ? toExternalRecipe(meals[0]) : null);
   }
 
-  const recipes = details.filter((recipe): recipe is ExternalRecipe => Boolean(recipe));
+  const recipes = details.filter((recipe): recipe is ExternalRecipe => Boolean(recipe && recipe.ingredients.length > 0 && recipe.steps.length > 0));
   return rankRecipes(recipes.filter((recipe) => matchesCuisine(recipe, cuisine)), cuisine, ingredientMatchCounts);
 };
 
@@ -117,6 +150,6 @@ export const searchTheMealDbRecipesByCuisine = async (cuisine: string): Promise<
   }
 
   return details
-    .filter((recipe): recipe is ExternalRecipe => Boolean(recipe))
+    .filter((recipe): recipe is ExternalRecipe => Boolean(recipe && recipe.ingredients.length > 0 && recipe.steps.length > 0))
     .filter((recipe) => matchesCuisine(recipe, cuisine));
 };

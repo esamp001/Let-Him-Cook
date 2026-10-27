@@ -66,15 +66,16 @@ const RecipeDetailPage = ({
 
       {/* Hero Banner Image */}
       <div style={styles.hero}>
-        <img
+        {recipe.imageUrl ? <img
           src={recipe.imageUrl}
           alt={recipe.title}
           style={styles.image}
-        />
+        /> : <div style={{ width: '100%', height: '100%', display: 'grid', placeItems: 'center', background: '#E8EEE9', color: '#52675C' }}>No photo available</div>}
       </div>
 
       {/* Header Info */}
       <div style={styles.header}>
+        {recipe.source && <p style={{ margin: '0 0 8px', color: culinaryPalette.textMuted, fontSize: 13 }}>{recipe.source === 'themealdb' ? 'Source: TheMealDB' : recipe.source === 'community' ? 'Community recipe' : 'AI-generated suggestion'}</p>}
         <div style={styles.titleRow}>
           <h1 style={styles.title}>{recipe.title}</h1>
           <button

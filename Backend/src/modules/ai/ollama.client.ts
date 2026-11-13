@@ -1,8 +1,9 @@
 import { env } from '../../config/env.js';
 import { getRecipeCacheKey, logOllamaTiming, trimExpiredCacheEntries } from '../../back-end-helpers/ollama-client.helpers.js';
 import { createOllamaError, isOllamaError } from '../../back-end-helpers/ollama-error.helpers.js';
-import { buildConversationDecisionPrompt, buildExternalRecipeSelectionPrompt, buildFinalRecipePrompt, buildInitialChatPrompt, buildPlanUpdatePrompt, buildRecipeDraftPrompt, buildRecipeSuggestionPrompt } from '../../back-end-helpers/ollama-prompt.helpers.js';
-import { aiConversationDecisionSchema, aiConversationPlanUpdateSchema, aiExternalRecipeSelectionSchema, aiFinalChatRecipeSchema, aiInitialChatModelResponseSchema, aiRecipeResponseSchema, recipeDraftSchema, type AiConversationDecision, type AiConversationPlanUpdate, type AiExternalRecipeSelection, type AiFinalChatRecipe, type AiInitialChatModelResponse, type AiRecipeResponse, type CookingPlan, type CuisinePreference } from './ai.types.js';
+import { buildConversationDecisionPrompt, buildExternalRecipeHighlightsPrompt, buildIngredientResolutionPrompt, buildInitialChatPrompt, buildPlanUpdatePrompt, buildRecipeDraftPrompt, buildRecipeSuggestionPrompt } from '../../back-end-helpers/ollama-prompt.helpers.js';
+import { aiExternalRecipeHighlightsSchema, aiIngredientResolutionSchema, ingredientResolutionResponseFormat } from './ai.schemas.js';
+import { aiConversationDecisionSchema, aiConversationPlanUpdateSchema, aiInitialChatModelResponseSchema, aiRecipeResponseSchema, recipeDraftSchema, type AiConversationDecision, type AiConversationPlanUpdate, type AiExternalRecipeHighlights, type AiIngredientResolution, type AiInitialChatModelResponse, type AiRecipeResponse, type CookingPlan, type CuisinePreference } from './ai.types.js';
 import type { ExternalRecipe } from '../recipes/interfaces/ExternalRecipe.js';
 import type { OllamaGenerateResponse } from './interfaces/OllamaGenerateResponse.js';
 import type { StructuredGenerationResult } from './interfaces/StructuredGenerationResult.js';
@@ -77,14 +78,6 @@ const conversationDecisionResponseSchema = {
   required: ['suggestion', 'followUpQuestion', 'followUpOptions', 'action'],
 } as const;
 
-const finalChatRecipeResponseSchema = {
-  type: 'object',
-  properties: {
-    recipe: recipeResponseSchema.properties.recipes.items,
-  },
-  required: ['recipe'],
-} as const;
-
 const recipeDraftResponseSchema = {
   type: 'object',
   properties: {
@@ -112,13 +105,12 @@ const recipeDraftResponseSchema = {
   required: ['title', 'description', 'cuisine', 'cookingTimeMinutes', 'difficulty', 'ingredients', 'steps'],
 } as const;
 
-const externalRecipeSelectionResponseSchema = {
+const externalRecipeHighlightsResponseSchema = {
   type: 'object',
   properties: {
-    recipeId: { type: 'string' },
-    reply: { type: 'string' },
+    recipeIds: { type: 'array', minItems: 1, maxItems: 2, items: { type: 'string' } },
   },
-  required: ['recipeId', 'reply'],
+  required: ['recipeIds'],
 } as const;
 
 const initialChatResponseSchema = {
@@ -295,14 +287,23 @@ export const updateConversationPlan = async (message: string, plan: CookingPlan,
   return aiConversationPlanUpdateSchema.parse(generated.result);
 };
 
+export const resolveIngredientsToEnglish = async (ingredients: string[]): Promise<string[]> => {
+  if (ingredients.length === 0) return [];
+
+  const generated = await generateStructuredResponse(buildIngredientResolutionPrompt(ingredients), ingredientResolutionResponseFormat, 'ingredient language resolution');
+  const parsedResolution = aiIngredientResolutionSchema.safeParse(generated.result);
+
+  if (!parsedResolution.success || parsedResolution.data.ingredients.length !== ingredients.length) {
+    throw createOllamaError('OLLAMA_INVALID_RESPONSE', 'The ingredient resolver did not return one English ingredient for every supplied ingredient.', parsedResolution.success ? undefined : parsedResolution.error);
+  }
+
+  const { ingredients: resolvedIngredients }: AiIngredientResolution = parsedResolution.data;
+  return resolvedIngredients;
+};
+
 export const decideConversationTurn = async (plan: CookingPlan, userIntent: 'question' | 'preference_response', isRetry = false): Promise<AiConversationDecision> => {
   const generated = await generateStructuredResponse(buildConversationDecisionPrompt(plan, userIntent, isRetry), conversationDecisionResponseSchema, 'conversation decision');
   return aiConversationDecisionSchema.parse(generated.result);
-};
-
-export const generateFinalChatRecipe = async (plan: CookingPlan, isRetry = false): Promise<AiFinalChatRecipe> => {
-  const generated = await generateStructuredResponse(buildFinalRecipePrompt(plan, isRetry), finalChatRecipeResponseSchema, 'final chat recipe');
-  return aiFinalChatRecipeSchema.parse(generated.result);
 };
 
 export const extractRecipeDraft = async (rawText: string): Promise<RecipeDraftImportResult> => {
@@ -346,7 +347,7 @@ export const extractRecipeDraft = async (rawText: string): Promise<RecipeDraftIm
   }
 };
 
-export const selectExternalRecipe = async (plan: CookingPlan, recipes: ExternalRecipe[]): Promise<AiExternalRecipeSelection> => {
-  const generated = await generateStructuredResponse(buildExternalRecipeSelectionPrompt(plan, recipes), externalRecipeSelectionResponseSchema, 'external recipe selection');
-  return aiExternalRecipeSelectionSchema.parse(generated.result);
+export const selectExternalRecipeHighlights = async (plan: CookingPlan, recipes: ExternalRecipe[]): Promise<AiExternalRecipeHighlights> => {
+  const generated = await generateStructuredResponse(buildExternalRecipeHighlightsPrompt(plan, recipes), externalRecipeHighlightsResponseSchema, 'external recipe highlights');
+  return aiExternalRecipeHighlightsSchema.parse(generated.result);
 };

@@ -1,5 +1,5 @@
 import { env } from '../../config/env.js';
-import { cuisineAreas, matchesCuisine, normalizeIngredientName, rankRecipes, readText, toExternalRecipe } from '../../back-end-helpers/themealdb-recipe.helpers.js';
+import { cuisineAreas, getTheMealDbIngredientCandidates, matchesCuisine, normalizeIngredientName, rankRecipes, readText, toExternalRecipe } from '../../back-end-helpers/themealdb-recipe.helpers.js';
 import { mealDbResponseSchema } from './recipe.schemas.js';
 import type { ExternalRecipe } from './interfaces/ExternalRecipe.js';
 
@@ -39,15 +39,20 @@ const findTheMealDbIngredient = async (ingredient: string) => {
 };
 
 const searchMealSummariesByIngredient = async (requestedIngredient: string) => {
-  let primaryIngredient = requestedIngredient.replace(/\s+/g, '_');
-  let summaries = await getMeals(`filter.php?i=${encodeURIComponent(primaryIngredient)}`);
+  const providerIngredients = getTheMealDbIngredientCandidates(requestedIngredient);
+  const summaries: Awaited<ReturnType<typeof getMeals>> = [];
+
+  for (const ingredient of providerIngredients) {
+    summaries.push(...await getMeals(`filter.php?i=${encodeURIComponent(ingredient.replace(/\s+/g, '_'))}`));
+  }
 
   if (summaries.length === 0) {
     // TheMealDB uses its own ingredient spelling. Resolve "sprout beans" to
     // "Bean Sprouts", for example, only when the original search has no match.
     const providerIngredient = await findTheMealDbIngredient(requestedIngredient);
-    primaryIngredient = providerIngredient.replace(/\s+/g, '_');
-    summaries = await getMeals(`filter.php?i=${encodeURIComponent(primaryIngredient)}`);
+    if (!providerIngredients.includes(providerIngredient)) {
+      summaries.push(...await getMeals(`filter.php?i=${encodeURIComponent(providerIngredient.replace(/\s+/g, '_'))}`));
+    }
   }
 
   return summaries;

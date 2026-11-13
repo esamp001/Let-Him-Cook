@@ -1,7 +1,8 @@
 import { z } from 'zod';
+import { aiExternalRecipeHighlightsSchema, aiIngredientResolutionSchema } from './ai.schemas.js';
 
 export const cuisinePreferenceSchema = z.enum(['any', 'filipino', 'asian', 'italian', 'western']);
-export const fallbackChoiceSchema = z.enum(['relax_ingredients', 'relax_cuisine', 'ai_recipe']);
+export const fallbackChoiceSchema = z.enum(['relax_ingredients', 'relax_cuisine']);
 
 export const aiRecipeRequestSchema = z.object({
   message: z.string().trim().min(1).max(1_000),
@@ -79,15 +80,6 @@ export const aiConversationDecisionSchema = z.object({
   action: z.enum(['ask_follow_up', 'generate_recipe']),
 });
 
-export const aiFinalChatRecipeSchema = z.object({
-  recipe: generatedRecipeSchema,
-});
-
-export const aiExternalRecipeSelectionSchema = z.object({
-  recipeId: z.string().trim().min(1),
-  reply: z.string().trim().min(1),
-});
-
 export const aiInitialChatModelResponseSchema = z.object({
   userIntent: z.enum(['find_recipes_now', 'needs_clarification']),
   suggestion: z.string().trim().min(1),
@@ -109,6 +101,6 @@ export type FallbackChoice = z.infer<typeof fallbackChoiceSchema>;
 export type CookingPlan = z.infer<typeof cookingPlanSchema>;
 export type AiConversationPlanUpdate = z.infer<typeof aiConversationPlanUpdateSchema>;
 export type AiConversationDecision = z.infer<typeof aiConversationDecisionSchema>;
-export type AiFinalChatRecipe = z.infer<typeof aiFinalChatRecipeSchema>;
-export type AiExternalRecipeSelection = z.infer<typeof aiExternalRecipeSelectionSchema>;
+export type AiExternalRecipeHighlights = z.infer<typeof aiExternalRecipeHighlightsSchema>;
+export type AiIngredientResolution = z.infer<typeof aiIngredientResolutionSchema>;
 export type AiInitialChatModelResponse = z.infer<typeof aiInitialChatModelResponseSchema>;

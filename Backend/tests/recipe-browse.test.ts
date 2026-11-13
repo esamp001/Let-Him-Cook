@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { filterBrowseRecipes } from '../src/back-end-helpers/recipe-browse.helpers.js';
-import { listTheMealDbRecipes } from '../src/modules/recipes/themealdb.client.js';
+import { listTheMealDbRecipes, searchTheMealDbRecipes } from '../src/modules/recipes/themealdb.client.js';
 import type { BrowseRecipe } from '../src/modules/recipes/interfaces/BrowseRecipe.js';
 
 test('browse filters preserve recipe source, cuisine, title, and ingredient matching', () => {
@@ -38,6 +38,41 @@ test('TheMealDB browse scans first letters once and caches the result', async ()
     assert.equal(first[0]?.ingredients[0]?.name, 'Chicken');
     assert.equal(second, first);
     assert.equal(requestCount, 26);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('TheMealDB search maps canonical English eggplant to provider ingredient names', async () => {
+  const originalFetch = globalThis.fetch;
+
+  globalThis.fetch = async (input) => {
+    const url = new URL(String(input));
+    const path = url.pathname.split('/').pop();
+    const ingredient = url.searchParams.get('i');
+    const id = url.searchParams.get('i');
+
+    if (path === 'filter.php' && ingredient === 'Egg_Plants') {
+      return new Response(JSON.stringify({ meals: [{ idMeal: '53073', strMeal: 'Eggplant Adobo' }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === 'filter.php' && ingredient === 'Aubergine') {
+      return new Response(JSON.stringify({ meals: null }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    if (path === 'lookup.php' && id === '53073') {
+      return new Response(JSON.stringify({ meals: [{ idMeal: '53073', strMeal: 'Eggplant Adobo', strArea: 'Filipino', strIngredient1: 'Egg Plants', strMeasure1: '1 lb', strInstructions: 'Cook the eggplant.' }] }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    return new Response(JSON.stringify({ meals: null }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  try {
+    const englishRecipes = await searchTheMealDbRecipes(['eggplant'], 'filipino');
+
+    assert.equal(englishRecipes.length, 1);
+    assert.equal(englishRecipes[0]?.title, 'Eggplant Adobo');
+    assert.equal(englishRecipes[0]?.ingredients[0]?.name, 'Egg Plants');
   } finally {
     globalThis.fetch = originalFetch;
   }

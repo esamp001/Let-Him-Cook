@@ -6,8 +6,6 @@ import { RecipeCard } from '../components/RecipeCard';
 import type { CookingChatPageProps } from '../types/interfaces/CookingChatPageProps';
 import { culinaryPalette } from '../theme/themeConfig';
 
-const matchingRecipesMessage = 'Matching recipes are being shown...';
-
 const styles: Record<string, CSSProperties> = {
   page: { width: '100%', height: 'calc(100dvh - 72px)', minHeight: 0, overflow: 'hidden', background: culinaryPalette.pageBackground },
   layout: { display: 'flex', width: '100%', height: '100%', minHeight: 0 },
@@ -32,7 +30,7 @@ const styles: Record<string, CSSProperties> = {
   userBubble: { background: culinaryPalette.primary, color: culinaryPalette.surface, borderColor: culinaryPalette.primary, borderBottomLeftRadius: 4 },
   assistantBubble: { maxWidth: '100%', borderBottomRightRadius: 4 },
   assistantStatus: { marginBottom: 10 },
-  assistantStatusText: { flex: 1, margin: 0, padding: '13px 16px', color: culinaryPalette.textSecondary, background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}`, borderRadius: 16 },
+  assistantStatusText: { display: 'inline-block', margin: 0, padding: '4px 10px', color: culinaryPalette.primary, background: culinaryPalette.successSurface, borderRadius: 999, fontSize: 12, fontWeight: 700 },
   followUp: { width: 'min(100%, 620px)', marginTop: 10, padding: 14, borderRadius: 14, background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}` },
   followUpLabel: { margin: '0 0 10px', color: culinaryPalette.text, fontWeight: 700 },
   optionGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8 },
@@ -124,12 +122,10 @@ const CookingChatPage = ({ messages, isLoading, error, onSendMessage, onStartOve
                     <div style={isUser ? undefined : styles.assistantContent}>
                       {!isUser && (
                         <div style={styles.assistantStatus}>
-                          <p style={styles.assistantStatusText}>{chatMessage.recipes?.length ? matchingRecipesMessage : 'AI response'}</p>
+                          <p style={styles.assistantStatusText}>{chatMessage.recipes?.length ? `${chatMessage.recipes.length} matching ${chatMessage.recipes.length === 1 ? 'recipe' : 'recipes'} found` : 'AI response'}</p>
                         </div>
                       )}
-                      {(!chatMessage.recipes?.length || chatMessage.content !== matchingRecipesMessage) && (
-                        <div style={{ ...styles.bubble, ...(isUser ? styles.userBubble : styles.assistantBubble) }}>{chatMessage.content}</div>
-                      )}
+                      <div style={{ ...styles.bubble, ...(isUser ? styles.userBubble : styles.assistantBubble) }}>{chatMessage.content}</div>
                       {canAnswerFollowUp && (
                         <div style={styles.followUp}>
                           <p style={styles.followUpLabel}>Choose anything you have or prefer:</p>

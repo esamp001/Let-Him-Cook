@@ -1,6 +1,6 @@
-import type { FallbackChoice } from '../ai';
+import type { FallbackAction } from '../ai';
 
 export interface FallbackOption {
-  id: FallbackChoice;
+  id: FallbackAction;
   label: string;
 }

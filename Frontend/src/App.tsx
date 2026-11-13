@@ -210,6 +210,12 @@ function App() {
   };
 
   const handleSelectFallback = (option: FallbackOption) => {
+    if (option.id === 'add_recipe') {
+      navigate('/My-Recipes');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     void sendChatMessage(option.label, cookingPlan, activeConversationId, option.id);
   };
 

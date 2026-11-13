@@ -1,8 +1,8 @@
 import type { RequestHandler } from 'express';
 import { aiChatRequestSchema, aiRecipeRequestSchema, recipeDraftRequestSchema, type AiConversationDecision, type AiInitialChatModelResponse, type CookingPlan, type FallbackChoice } from './ai.types.js';
-import { decideConversationTurn, extractRecipeDraft, generateFinalChatRecipe, generateInitialChatTurn, generateRecipeSuggestions, updateConversationPlan } from './ollama.client.js';
+import { decideConversationTurn, extractRecipeDraft, generateInitialChatTurn, generateRecipeSuggestions, resolveIngredientsToEnglish, selectExternalRecipeHighlights, updateConversationPlan } from './ollama.client.js';
 import { searchTheMealDbRecipes, searchTheMealDbRecipesByCuisine } from '../recipes/themealdb.client.js';
-import { formatConversationReply, formatCuisineDescription, formatCuisineName, getFallbackOptions, isValidConversationDecision, isValidInitialChatTurn, normalizeIngredient, parseStructuredRecipeDraft, toExternalChatRecipe, toGeneratedChatRecipe } from '../../back-end-helpers/ai-recipe.helpers.js';
+import { formatConversationReply, formatCuisineName, formatExternalRecipeExplanation, formatNoRecipeMatchReply, getFallbackOptions, isValidConversationDecision, isValidInitialChatTurn, normalizeIngredient, parseStructuredRecipeDraft, toExternalChatRecipe } from '../../back-end-helpers/ai-recipe.helpers.js';
 import { isOllamaError } from '../../back-end-helpers/ollama-error.helpers.js';
 
 export const generateRecipes: RequestHandler = async (request, response, next) => {
@@ -113,16 +113,11 @@ const getRecipesForPlan = async (plan: CookingPlan) => {
   const availableIngredients = new Set(plan.ingredients.map(normalizeIngredient));
 
   if (externalRecipes.length > 0) {
-    return { recipes: externalRecipes.map((recipe) => toExternalChatRecipe(recipe, availableIngredients)), fallbackOptions: [] };
+    const highlights = await selectExternalRecipeHighlights(plan, externalRecipes.slice(0, 5));
+    return { reply: formatExternalRecipeExplanation(plan, externalRecipes, highlights.recipeIds), recipes: externalRecipes.map((recipe) => toExternalChatRecipe(recipe, availableIngredients)), fallbackOptions: [] };
   }
 
-  if (plan.cuisine !== 'any') {
-    return { recipes: [], fallbackOptions: getFallbackOptions(plan.cuisine) };
-  }
-
-  const generatedRecipe = await generateFinalChatRecipe(plan);
-
-  return { recipes: [toGeneratedChatRecipe(generatedRecipe.recipe, availableIngredients)], fallbackOptions: [] };
+  return { reply: '', recipes: [], fallbackOptions: getFallbackOptions(plan.cuisine) };
 };
 
 const getFallbackRecipes = async (plan: CookingPlan, choice: FallbackChoice) => {
@@ -130,9 +125,10 @@ const getFallbackRecipes = async (plan: CookingPlan, choice: FallbackChoice) => 
 
   if (choice === 'relax_ingredients') {
     const recipes = await searchTheMealDbRecipesByCuisine(plan.cuisine);
+    const highlights = recipes.length > 0 ? await selectExternalRecipeHighlights(plan, recipes.slice(0, 5)) : null;
     return {
-      reply: recipes.length > 0
-        ? `Here are ${formatCuisineName(plan.cuisine)} recipes. I highlighted ingredients you may need.`
+      reply: highlights
+        ? formatExternalRecipeExplanation(plan, recipes, highlights.recipeIds)
         : `I still couldn't find ${formatCuisineName(plan.cuisine)} recipes from our recipe source.`,
       recipes: recipes.map((recipe) => toExternalChatRecipe(recipe, availableIngredients)),
     };
@@ -140,19 +136,16 @@ const getFallbackRecipes = async (plan: CookingPlan, choice: FallbackChoice) => 
 
   if (choice === 'relax_cuisine') {
     const recipes = await searchTheMealDbRecipes(plan.ingredients, 'any');
+    const highlights = recipes.length > 0 ? await selectExternalRecipeHighlights(plan, recipes.slice(0, 5)) : null;
     return {
-      reply: recipes.length > 0
-        ? 'Here are recipes that match your ingredients from any cuisine.'
+      reply: highlights
+        ? formatExternalRecipeExplanation(plan, recipes, highlights.recipeIds)
         : 'I could not find source recipes for those ingredients.',
       recipes: recipes.map((recipe) => toExternalChatRecipe(recipe, availableIngredients)),
     };
   }
 
-  const generatedRecipe = await generateFinalChatRecipe(plan);
-  return {
-    reply: `Here is an AI-generated ${formatCuisineDescription(plan.cuisine)} suggestion.`,
-    recipes: [toGeneratedChatRecipe(generatedRecipe.recipe, availableIngredients)],
-  };
+  throw new Error(`Unsupported recipe fallback choice: ${choice}`);
 };
 
 export const continueCookingConversation: RequestHandler = async (request, response, next) => {
@@ -211,7 +204,7 @@ export const continueCookingConversation: RequestHandler = async (request, respo
         return;
       }
 
-      const initialPlan = { ...initialTurn.plan, questionCount: 0 };
+      const initialPlan = { ...initialTurn.plan, ingredients: await resolveIngredientsToEnglish(initialTurn.plan.ingredients), questionCount: 0 };
 
       if (initialTurn.userIntent === 'find_recipes_now') {
         const recipeResult = await getRecipesForPlan(initialPlan);
@@ -219,7 +212,7 @@ export const continueCookingConversation: RequestHandler = async (request, respo
 
         response.status(200).json({
           data: {
-            reply: hasFallbackOptions ? `I couldn't find ${formatCuisineName(initialPlan.cuisine)} recipes that match your current ingredients. What would you like to do?` : initialTurn.suggestion,
+            reply: hasFallbackOptions ? formatNoRecipeMatchReply(initialPlan.cuisine) : recipeResult.reply,
             action: hasFallbackOptions ? 'choose_fallback' : 'generate_recipe',
             plan: initialPlan,
             followUpOptions: [],
@@ -244,7 +237,7 @@ export const continueCookingConversation: RequestHandler = async (request, respo
     }
 
     const planUpdate = await updateConversationPlan(message, plan);
-    const updatedPlan = { ...planUpdate.plan, questionCount: plan.questionCount };
+    const updatedPlan = { ...planUpdate.plan, ingredients: await resolveIngredientsToEnglish(planUpdate.plan.ingredients), questionCount: plan.questionCount };
     console.log(planUpdate, 'OLLAMA CONVERSATION PLAN UPDATE');
 
     let decision: AiConversationDecision | null = null;
@@ -289,7 +282,7 @@ export const continueCookingConversation: RequestHandler = async (request, respo
 
     response.status(200).json({
       data: {
-        reply: hasFallbackOptions ? `I couldn't find ${formatCuisineName(updatedPlan.cuisine)} recipes that match your current ingredients. What would you like to do?` : formatConversationReply(decision.suggestion, decision.followUpQuestion),
+        reply: hasFallbackOptions ? formatNoRecipeMatchReply(updatedPlan.cuisine) : recipeResult.reply,
         action: hasFallbackOptions ? 'choose_fallback' : 'generate_recipe',
         plan: updatedPlan,
         followUpOptions: [],

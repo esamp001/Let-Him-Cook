@@ -168,7 +168,7 @@ const RecipesPage = ({
           <h1 style={styles.resultsTitle}>Explore recipes</h1>
           <span style={styles.resultsCount}>{isBrowseLoading ? 'Loading recipes...' : `${browseTotal} recipes`}</span>
         </div>
-        <Button type="primary" icon={<PlusOutlined />} onClick={onContributeRecipe}>Add my recipe</Button>
+        <Button type="primary" icon={<PlusOutlined />} onClick={onContributeRecipe}>Add Recipe</Button>
       </div>
 
       <p style={styles.aiNotice}>Browse TheMealDB recipes. Approved user recipes will appear here when community publishing is available.</p>

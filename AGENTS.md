@@ -362,6 +362,13 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
 - Keep code simple and direct. Avoid redundant intermediate variables or extra layers that only rename or pass along the same value; create a variable when it makes the code clearer, is reused, or holds a changed result.
 - Before adding or changing code, inspect comparable existing files and follow their established structure, naming, validation, error-handling, and formatting patterns. Copy the relevant existing approach for consistency unless it does not fit the new requirement or conflicts with these standards; when deviating, keep the alternative minimal and explain why it is needed.
 
+### Dynamic Application Data Standard
+
+- Use dynamic data throughout the production application. Recipe results, chat responses, users, preferences, shopping lists, community content, and other application records must come from the appropriate API, database, provider, or current user state rather than hardcoded sample records.
+- Do not place mock, placeholder, demo, or static application records in production pages, components, controllers, repositories, or provider workflows.
+- Static data is allowed when it represents fixed configuration, schemas, enums, validation rules, UI labels, or other values that are intentionally constant rather than application records.
+- Mock or static application records may be used only in tests, test fixtures, seeds, or explicitly identified development-only scaffolding. Keep that data isolated so it cannot silently appear in production behavior.
+
 ### Database Migration Standard
 
 - Create and modify schema through Knex's schema builder (`knex.schema`, `table`, and column helpers) by default.

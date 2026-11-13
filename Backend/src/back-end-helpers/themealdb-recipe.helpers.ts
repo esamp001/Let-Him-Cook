@@ -8,6 +8,10 @@ export const cuisineAreas: Record<string, readonly string[]> = {
   western: ['american', 'british', 'canadian', 'french', 'greek', 'irish', 'spanish'],
 } as const;
 
+const theMealDbIngredientOverrides: Record<string, readonly string[]> = {
+  eggplant: ['Egg Plants', 'Aubergine'],
+} as const;
+
 /**
  * Name: readText.
  * Returns: A trimmed string or null when the field is empty or not text.
@@ -82,6 +86,16 @@ export const normalizeIngredientName = (ingredient: string) => ingredient
   .map((word) => word.endsWith('s') ? word.slice(0, -1) : word)
   .sort()
   .join(' ');
+
+/**
+ * Name: getTheMealDbIngredientCandidates.
+ * Returns: Provider ingredient names to query for a user-supplied ingredient.
+ * Parameters: Canonical English ingredient name from the validated cooking plan.
+ * Description: Expands provider-specific vocabulary differences without changing ordinary ingredients.
+ */
+export const getTheMealDbIngredientCandidates = (ingredient: string): readonly string[] => (
+  theMealDbIngredientOverrides[normalizeIngredientName(ingredient)] ?? [ingredient]
+);
 
 /**
  * Name: matchesCuisine.

@@ -1,4 +1,4 @@
-import type { AiConversationDecision, AiFinalChatRecipe, AiInitialChatModelResponse, CookingPlan, RecipeDraft } from '../modules/ai/ai.types.js';
+import type { AiConversationDecision, AiInitialChatModelResponse, CookingPlan, RecipeDraft } from '../modules/ai/ai.types.js';
 import type { ExternalRecipe } from '../modules/recipes/interfaces/ExternalRecipe.js';
 
 const proteinPattern = /\b(beef|chicken|pork|lamb|goat|veal|turkey|duck|shrimp|prawn|fish|salmon|tuna|seafood|egg|eggs|tofu|tempeh|beans|lentils|chickpeas)\b/i;
@@ -160,6 +160,30 @@ export const formatConversationReply = (suggestion: string, followUpQuestion: st
 );
 
 /**
+ * Name: formatExternalRecipeExplanation.
+ * Returns: A conversational explanation containing only verified recipe facts.
+ * Parameters: cooking plan, external recipes, and AI-selected recipe IDs.
+ * Description: Validates selected IDs and describes ingredient matches computed from supplied data.
+ */
+export const formatExternalRecipeExplanation = (plan: CookingPlan, recipes: ExternalRecipe[], selectedRecipeIds: string[]) => {
+  const selectedIdSet = new Set(selectedRecipeIds);
+  const selectedRecipes = recipes.filter((recipe) => selectedIdSet.has(recipe.id)).slice(0, 2);
+  const recipesToExplain = selectedRecipes.length > 0 ? selectedRecipes : recipes.slice(0, 2);
+  const availableIngredients = new Set(plan.ingredients.map(normalizeIngredient));
+  const explanations = recipesToExplain.map((recipe) => {
+    const matchingIngredients = recipe.ingredients
+      .map((ingredient) => ingredient.name)
+      .filter((ingredient) => availableIngredients.has(normalizeIngredient(ingredient)));
+
+    return matchingIngredients.length > 0
+      ? `${recipe.title} includes ${matchingIngredients.join(', ')} from your ingredients.`
+      : `${recipe.title} is one of the available recipe matches.`;
+  });
+
+  return `I found ${recipes.length} matching ${recipes.length === 1 ? 'recipe' : 'recipes'} for you. ${explanations.join(' ')}`;
+};
+
+/**
  * Name: formatCuisineName.
  * Returns: A user-friendly cuisine label.
  * Parameters: cuisine value from a cooking plan.
@@ -168,24 +192,28 @@ export const formatConversationReply = (suggestion: string, followUpQuestion: st
 export const formatCuisineName = (cuisine: CookingPlan['cuisine']) => cuisine === 'any' ? 'any cuisine' : `${cuisine[0].toUpperCase()}${cuisine.slice(1)}`;
 
 /**
- * Name: formatCuisineDescription.
- * Returns: A user-facing cuisine description.
- * Parameters: cuisine value from a cooking plan.
- * Description: Adds the word cuisine when needed for sentence text.
+ * Name: formatNoRecipeMatchReply.
+ * Returns: A source-miss message appropriate for the requested cuisine.
+ * Parameters: Cuisine from the current cooking plan.
+ * Description: Explains that no sourced recipe matched before offering explicit fallback choices.
  */
-export const formatCuisineDescription = (cuisine: CookingPlan['cuisine']) => cuisine === 'any' ? 'any cuisine' : `${formatCuisineName(cuisine)} cuisine`;
+export const formatNoRecipeMatchReply = (cuisine: CookingPlan['cuisine']) => cuisine === 'any'
+  ? "I couldn't find source recipes that match your current ingredients. You can create your own version and save it to My recipes."
+  : `I couldn't find ${formatCuisineName(cuisine)} recipes that match your current ingredients. What would you like to do?`;
 
 /**
  * Name: getFallbackOptions.
- * Returns: Available fallback choices for a cuisine-filtered search.
+ * Returns: Available fallback choices for a source search with no matches.
  * Parameters: requested cuisine.
- * Description: Creates labels for relaxing ingredients, cuisine, or using AI.
+ * Description: Offers relevant source-search alternatives and a path to create a personal recipe draft.
  */
-export const getFallbackOptions = (cuisine: CookingPlan['cuisine']) => [
-  { id: 'relax_ingredients' as const, label: `${formatCuisineName(cuisine)} recipes — extra ingredients OK` },
-  { id: 'relax_cuisine' as const, label: 'Keep my ingredients — any cuisine' },
-  { id: 'ai_recipe' as const, label: `Make an AI-generated ${formatCuisineName(cuisine)} recipe` },
-];
+export const getFallbackOptions = (cuisine: CookingPlan['cuisine']) => cuisine === 'any'
+  ? [{ id: 'add_recipe' as const, label: 'Create your own version' }]
+  : [
+    { id: 'relax_ingredients' as const, label: `${formatCuisineName(cuisine)} recipes — extra ingredients OK` },
+    { id: 'relax_cuisine' as const, label: 'Keep my ingredients — any cuisine' },
+    { id: 'add_recipe' as const, label: 'Create your own version' },
+  ];
 
 /**
  * Name: toExternalChatRecipe.
@@ -214,17 +242,4 @@ export const toExternalChatRecipe = (externalRecipe: ExternalRecipe, availableIn
     .filter((ingredient) => !availableIngredients.has(normalizeIngredient(ingredient.name)))
     .map((ingredient) => ({ name: ingredient.name, quantity: ingredient.quantity || 'Not listed', optional: false })),
   imageUrl: externalRecipe.imageUrl,
-});
-
-/**
- * Name: toGeneratedChatRecipe.
- * Returns: An AI recipe formatted for chat display.
- * Parameters: generated recipe and normalized available ingredients.
- * Description: Adds source, owned ingredients, and required missing ingredients.
- */
-export const toGeneratedChatRecipe = (recipe: AiFinalChatRecipe['recipe'], availableIngredients: Set<string>) => ({
-  ...recipe,
-  source: 'ai-generated' as const,
-  alreadyHave: recipe.ingredients.filter((ingredient) => availableIngredients.has(normalizeIngredient(ingredient.name))),
-  missingIngredients: recipe.ingredients.filter((ingredient) => !ingredient.optional && !availableIngredients.has(normalizeIngredient(ingredient.name))),
 });

@@ -137,6 +137,10 @@ export const isValidInitialChatTurn = (generated: AiInitialChatModelResponse, me
 
   const generatedPlan = { ...generated.plan, questionCount: 0 };
 
+  if (generated.userIntent === 'answer_only') {
+    return generated.followUpQuestion === null && generated.followUpOptions.length === 0;
+  }
+
   if (generated.userIntent === 'find_recipes_now') {
     return generatedPlan.ingredients.length > 0
       && generated.followUpQuestion === null
@@ -153,10 +157,10 @@ export const isValidInitialChatTurn = (generated: AiInitialChatModelResponse, me
  * Name: formatConversationReply.
  * Returns: A display-ready conversation reply.
  * Parameters: suggestion text and optional follow-up question.
- * Description: Combines reply content with spacing only when a question exists.
+ * Description: Combines reply content with spacing only when a distinct question exists, so repeated model text appears once.
  */
 export const formatConversationReply = (suggestion: string, followUpQuestion: string | null) => (
-  followUpQuestion ? `${suggestion}\n\n${followUpQuestion}` : suggestion
+  followUpQuestion && followUpQuestion.trim().toLowerCase() !== suggestion.trim().toLowerCase() ? `${suggestion}\n\n${followUpQuestion}` : followUpQuestion ?? suggestion
 );
 
 /**
@@ -222,6 +226,7 @@ export const getFallbackOptions = (cuisine: CookingPlan['cuisine']) => cuisine =
  * Description: Maps TheMealDB data and calculates owned and missing ingredients.
  */
 export const toExternalChatRecipe = (externalRecipe: ExternalRecipe, availableIngredients: Set<string>) => ({
+  id: externalRecipe.id,
   title: externalRecipe.title,
   description: externalRecipe.area ? `${externalRecipe.area} recipe provided by TheMealDB.` : 'Recipe provided by TheMealDB.',
   cookingTimeMinutes: null,

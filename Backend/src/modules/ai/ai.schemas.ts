@@ -8,6 +8,18 @@ export const aiIngredientResolutionSchema = z.object({
   ingredients: z.array(z.string().trim().min(1)).min(1).max(20),
 });
 
+export const aiShownRecipeAnswerSchema = z.object({
+  answer: z.string().trim().min(1).max(800),
+});
+
+export const shownRecipeAnswerResponseFormat = {
+  type: 'object',
+  properties: {
+    answer: { type: 'string' },
+  },
+  required: ['answer'],
+} as const;
+
 export const ingredientResolutionResponseFormat = {
   type: 'object',
   properties: {

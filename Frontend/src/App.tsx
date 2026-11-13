@@ -68,7 +68,7 @@ const mapAiRecipe = (recipe: AiRecipe): Recipe => {
   const availableIngredients = new Set(recipe.alreadyHave.map((ingredient) => ingredient.name.toLowerCase()));
 
   return {
-    id: crypto.randomUUID(),
+    id: recipe.id,
     title: recipe.title,
     description: `${recipe.description} ${recipe.recommendationReason}`,
     imageUrl: recipe.imageUrl ?? generatedRecipeImage,
@@ -148,6 +148,9 @@ function App() {
       createConversation(message, planForRequest);
     }
 
+    // A new search starts a new conversation, so recipes from the previous one are not "shown" anymore.
+    const shownRecipeIds = conversationId !== activeConversationId ? [] : [...chatMessages].reverse().find((chatMessage) => chatMessage.recipes?.length)?.recipes?.slice(0, 10).map((recipe) => recipe.id) ?? [];
+
     setChatMessages((previous) => [...previous, { id: crypto.randomUUID(), role: 'user', content: message }]);
     setIsChatLoading(true);
     setChatError(null);
@@ -156,7 +159,7 @@ function App() {
       const apiResponse = await fetch('/api/v1/ai/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message, plan: planForRequest, fallbackChoice }),
+        body: JSON.stringify({ message, plan: planForRequest, fallbackChoice, shownRecipeIds }),
       });
 
       const response = await apiResponse.json() as AiChatResponse;

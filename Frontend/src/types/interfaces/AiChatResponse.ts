@@ -5,7 +5,7 @@ import type { FallbackOption } from './FallbackOption';
 export interface AiChatResponse {
   data?: {
     reply: string;
-    action: 'ask_follow_up' | 'choose_fallback' | 'generate_recipe';
+    action: 'ask_follow_up' | 'choose_fallback' | 'generate_recipe' | 'answer';
     plan: CookingPlan;
     followUpOptions: string[];
     fallbackOptions: FallbackOption[];

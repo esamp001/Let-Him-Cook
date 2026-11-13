@@ -2,6 +2,7 @@ import type { AiIngredient } from './AiIngredient';
 import type { Recipe } from './Recipe';
 
 export interface AiRecipe {
+  id: string;
   title: string;
   description: string;
   cookingTimeMinutes: number | null;

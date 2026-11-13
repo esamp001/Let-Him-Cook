@@ -138,6 +138,16 @@ export const searchTheMealDbRecipes = async (ingredients: string[], cuisine = 'a
   return rankRecipes(recipes.filter((recipe) => matchesCuisine(recipe, cuisine)), cuisine, ingredientMatchCounts);
 };
 
+export const getTheMealDbRecipeById = async (id: string): Promise<ExternalRecipe | null> => {
+  // TheMealDB IDs are numeric; other IDs (such as older saved chat recipes) make it return "meals": "Invalid ID".
+  if (!/^\d+$/.test(id)) return null;
+
+  const meals = await getMeals(`lookup.php?i=${encodeURIComponent(id)}`);
+  const recipe = meals[0] ? toExternalRecipe(meals[0]) : null;
+
+  return recipe && recipe.ingredients.length > 0 && recipe.steps.length > 0 ? recipe : null;
+};
+
 export const searchTheMealDbRecipesByCuisine = async (cuisine: string): Promise<ExternalRecipe[]> => {
   const areas = cuisineAreas[cuisine] ?? [];
 

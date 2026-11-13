@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { filterBrowseRecipes } from '../src/back-end-helpers/recipe-browse.helpers.js';
-import { listTheMealDbRecipes, searchTheMealDbRecipes } from '../src/modules/recipes/themealdb.client.js';
+import { getTheMealDbRecipeById, listTheMealDbRecipes, searchTheMealDbRecipes } from '../src/modules/recipes/themealdb.client.js';
 import type { BrowseRecipe } from '../src/modules/recipes/interfaces/BrowseRecipe.js';
 
 test('browse filters preserve recipe source, cuisine, title, and ingredient matching', () => {
@@ -73,6 +73,23 @@ test('TheMealDB search maps canonical English eggplant to provider ingredient na
     assert.equal(englishRecipes.length, 1);
     assert.equal(englishRecipes[0]?.title, 'Eggplant Adobo');
     assert.equal(englishRecipes[0]?.ingredients[0]?.name, 'Egg Plants');
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('TheMealDB lookup skips non-numeric IDs from older saved chat recipes', async () => {
+  const originalFetch = globalThis.fetch;
+  let requestCount = 0;
+
+  globalThis.fetch = async () => {
+    requestCount += 1;
+    return new Response(JSON.stringify({ meals: 'Invalid ID' }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  try {
+    assert.equal(await getTheMealDbRecipeById('3f2b8c1e-5d4a-4e7b-9c1f-2a6d8e0b4c3a'), null);
+    assert.equal(requestCount, 0);
   } finally {
     globalThis.fetch = originalFetch;
   }

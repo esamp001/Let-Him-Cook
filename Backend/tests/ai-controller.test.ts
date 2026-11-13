@@ -67,3 +67,74 @@ test('a source miss offers the personal recipe creation path without generating 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('a question about shown recipes is answered from recipe data without a new search', async () => {
+  const originalFetch = globalThis.fetch;
+  const ollamaPrompts: string[] = [];
+  const mealDbPaths: string[] = [];
+  let responseBody: unknown;
+  let responseStatus = 0;
+  let nextError: unknown;
+
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+
+    if (url.pathname === '/api/generate') {
+      ollamaPrompts.push(JSON.parse(String(init?.body)).prompt);
+      const generatedResponse = ollamaPrompts.length === 1
+        ? {
+          userIntent: 'answer_only',
+          suggestion: 'Let me check the cuisine of those recipes.',
+          followUpQuestion: null,
+          followUpOptions: [],
+          plan: { ingredients: ['tofu'], cuisine: 'any', preferences: [] },
+        }
+        : { answer: 'No. Ma Po Tofu is listed as a Chinese recipe.' };
+      return new Response(JSON.stringify({ response: JSON.stringify(generatedResponse) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    mealDbPaths.push(`${url.pathname}${url.search}`);
+    return new Response(JSON.stringify({
+      meals: [{ idMeal: '52814', strMeal: 'Ma Po Tofu', strArea: 'Chinese', strCategory: 'Beef', strInstructions: 'Cook the tofu.', strIngredient1: 'Tofu', strMeasure1: '450g' }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  const plan = { ingredients: ['tofu'], cuisine: 'any', preferences: [], questionCount: 0 };
+  const request = { body: { message: 'Are these filipino foods?', plan, shownRecipeIds: ['52814'] } } as Request;
+  const expressResponse = {
+    status: (status: number) => {
+      responseStatus = status;
+      return expressResponse;
+    },
+    json: (body: unknown) => {
+      responseBody = body;
+      return expressResponse;
+    },
+  } as unknown as Response;
+  const next: NextFunction = (error?: unknown) => {
+    nextError = error;
+  };
+
+  try {
+    await continueCookingConversation(request, expressResponse, next);
+
+    assert.equal(nextError, undefined);
+    assert.equal(responseStatus, 200);
+    assert.equal(ollamaPrompts.length, 2);
+    assert.match(ollamaPrompts[1], /"area":"Chinese"/);
+    assert.equal(mealDbPaths.length, 1);
+    assert.match(mealDbPaths[0], /lookup\.php\?i=52814/);
+    assert.deepEqual(responseBody, {
+      data: {
+        reply: 'No. Ma Po Tofu is listed as a Chinese recipe.',
+        action: 'answer',
+        plan,
+        followUpOptions: [],
+        fallbackOptions: [],
+        recipes: [],
+      },
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

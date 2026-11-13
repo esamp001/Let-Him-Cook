@@ -1,9 +1,9 @@
 import { env } from '../../config/env.js';
 import { getRecipeCacheKey, logOllamaTiming, trimExpiredCacheEntries } from '../../back-end-helpers/ollama-client.helpers.js';
 import { createOllamaError, isOllamaError } from '../../back-end-helpers/ollama-error.helpers.js';
-import { buildConversationDecisionPrompt, buildExternalRecipeHighlightsPrompt, buildIngredientResolutionPrompt, buildInitialChatPrompt, buildPlanUpdatePrompt, buildRecipeDraftPrompt, buildRecipeSuggestionPrompt } from '../../back-end-helpers/ollama-prompt.helpers.js';
-import { aiExternalRecipeHighlightsSchema, aiIngredientResolutionSchema, ingredientResolutionResponseFormat } from './ai.schemas.js';
-import { aiConversationDecisionSchema, aiConversationPlanUpdateSchema, aiInitialChatModelResponseSchema, aiRecipeResponseSchema, recipeDraftSchema, type AiConversationDecision, type AiConversationPlanUpdate, type AiExternalRecipeHighlights, type AiIngredientResolution, type AiInitialChatModelResponse, type AiRecipeResponse, type CookingPlan, type CuisinePreference } from './ai.types.js';
+import { buildConversationDecisionPrompt, buildExternalRecipeHighlightsPrompt, buildIngredientResolutionPrompt, buildInitialChatPrompt, buildPlanUpdatePrompt, buildRecipeDraftPrompt, buildRecipeSuggestionPrompt, buildShownRecipeAnswerPrompt } from '../../back-end-helpers/ollama-prompt.helpers.js';
+import { aiExternalRecipeHighlightsSchema, aiIngredientResolutionSchema, aiShownRecipeAnswerSchema, ingredientResolutionResponseFormat, shownRecipeAnswerResponseFormat } from './ai.schemas.js';
+import { aiConversationDecisionSchema, aiConversationPlanUpdateSchema, aiInitialChatModelResponseSchema, aiRecipeResponseSchema, recipeDraftSchema, type AiConversationDecision, type AiConversationPlanUpdate, type AiExternalRecipeHighlights, type AiIngredientResolution, type AiInitialChatModelResponse, type AiRecipeResponse, type AiShownRecipeAnswer, type CookingPlan, type CuisinePreference } from './ai.types.js';
 import type { ExternalRecipe } from '../recipes/interfaces/ExternalRecipe.js';
 import type { OllamaGenerateResponse } from './interfaces/OllamaGenerateResponse.js';
 import type { StructuredGenerationResult } from './interfaces/StructuredGenerationResult.js';
@@ -53,7 +53,7 @@ const recipeResponseSchema = {
 const conversationPlanUpdateResponseSchema = {
   type: 'object',
   properties: {
-    userIntent: { type: 'string', enum: ['question', 'preference_response'] },
+    userIntent: { type: 'string', enum: ['question', 'preference_response', 'answer_only'] },
     plan: {
       type: 'object',
       properties: {
@@ -116,7 +116,7 @@ const externalRecipeHighlightsResponseSchema = {
 const initialChatResponseSchema = {
   type: 'object',
   properties: {
-    userIntent: { type: 'string', enum: ['find_recipes_now', 'needs_clarification'] },
+    userIntent: { type: 'string', enum: ['find_recipes_now', 'needs_clarification', 'answer_only'] },
     suggestion: { type: 'string' },
     followUpQuestion: { anyOf: [{ type: 'string' }, { type: 'null' }] },
     followUpOptions: { type: 'array', minItems: 0, maxItems: 6, items: { type: 'string' } },
@@ -350,4 +350,9 @@ export const extractRecipeDraft = async (rawText: string): Promise<RecipeDraftIm
 export const selectExternalRecipeHighlights = async (plan: CookingPlan, recipes: ExternalRecipe[]): Promise<AiExternalRecipeHighlights> => {
   const generated = await generateStructuredResponse(buildExternalRecipeHighlightsPrompt(plan, recipes), externalRecipeHighlightsResponseSchema, 'external recipe highlights');
   return aiExternalRecipeHighlightsSchema.parse(generated.result);
+};
+
+export const answerShownRecipeQuestion = async (message: string, recipes: ExternalRecipe[]): Promise<AiShownRecipeAnswer> => {
+  const generated = await generateStructuredResponse(buildShownRecipeAnswerPrompt(message, recipes), shownRecipeAnswerResponseFormat, 'shown recipe answer');
+  return aiShownRecipeAnswerSchema.parse(generated.result);
 };

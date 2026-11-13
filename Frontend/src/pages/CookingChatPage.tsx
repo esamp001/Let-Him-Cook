@@ -23,21 +23,22 @@ const styles: Record<string, CSSProperties> = {
   userRow: { justifyContent: 'flex-start' },
   assistantRow: { justifyContent: 'flex-end' },
   assistantContent: { width: '82%', maxWidth: 1120, minWidth: 0 },
+  userContent: { maxWidth: '70%', minWidth: 0 },
   avatar: { width: 34, height: 34, flexShrink: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: culinaryPalette.primary, color: culinaryPalette.surface },
   assistantAvatar: { background: 'transparent' },
   userAvatar: { background: culinaryPalette.accent },
   bubble: { maxWidth: '78%', padding: '13px 16px', borderRadius: 18, background: culinaryPalette.surface, color: culinaryPalette.textSecondary, border: `1px solid ${culinaryPalette.border}`, lineHeight: 1.55, whiteSpace: 'pre-wrap' },
-  userBubble: { background: culinaryPalette.primary, color: culinaryPalette.surface, borderColor: culinaryPalette.primary, borderBottomLeftRadius: 4 },
+  userBubble: { maxWidth: '100%', background: culinaryPalette.primary, color: culinaryPalette.surface, borderColor: culinaryPalette.primary, borderBottomLeftRadius: 4, overflowWrap: 'anywhere' },
   assistantBubble: { maxWidth: '100%', borderBottomRightRadius: 4 },
   assistantStatus: { marginBottom: 10 },
   assistantStatusText: { display: 'inline-block', margin: 0, padding: '4px 10px', color: culinaryPalette.primary, background: culinaryPalette.successSurface, borderRadius: 999, fontSize: 12, fontWeight: 700 },
-  followUp: { width: 'min(100%, 620px)', marginTop: 10, padding: 14, borderRadius: 14, background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}` },
+  followUp: { width: 'min(100%, 620px)', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${culinaryPalette.border}`, whiteSpace: 'normal' },
   followUpLabel: { margin: '0 0 10px', color: culinaryPalette.text, fontWeight: 700 },
   optionGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8 },
   optionButton: { height: 'auto', minHeight: 42, padding: '9px 12px', textAlign: 'left', whiteSpace: 'normal', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' },
   selectedOption: { background: '#E7F5EC', borderColor: culinaryPalette.primary, color: culinaryPalette.text },
   continueButton: { width: '100%', marginTop: 10 },
-  fallbackChoices: { width: 'min(100%, 620px)', marginTop: 10, padding: 14, borderRadius: 14, background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}` },
+  fallbackChoices: { width: 'min(100%, 620px)', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${culinaryPalette.border}`, whiteSpace: 'normal' },
   fallbackButton: { width: '100%', height: 'auto', minHeight: 42, marginTop: 8, padding: '9px 12px', textAlign: 'left', whiteSpace: 'normal', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' },
   recipeList: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, width: '100%', marginTop: 10 },
   viewAllButton: { marginTop: 10 },
@@ -76,7 +77,9 @@ const CookingChatPage = ({ messages, isLoading, error, onSendMessage, onStartOve
 
   const submitOptions = (messageId: string) => {
     const choices = selectedOptions[messageId] ?? [];
-    onSendMessage(choices.length > 0 ? `I have: ${choices.join(', ')}.` : "I don't have any of those.");
+    if (choices.length === 0) return;
+
+    onSendMessage(`My choices: ${choices.join(', ')}.`);
   };
 
   return (
@@ -119,48 +122,50 @@ const CookingChatPage = ({ messages, isLoading, error, onSendMessage, onStartOve
                 return (
                   <div key={chatMessage.id} style={{ ...styles.row, ...(isUser ? styles.userRow : styles.assistantRow) }}>
                     {isUser && <span style={{ ...styles.avatar, ...styles.userAvatar }}><UserOutlined /></span>}
-                    <div style={isUser ? undefined : styles.assistantContent}>
+                    <div style={isUser ? styles.userContent : styles.assistantContent}>
                       {!isUser && (
                         <div style={styles.assistantStatus}>
                           <p style={styles.assistantStatusText}>{chatMessage.recipes?.length ? `${chatMessage.recipes.length} matching ${chatMessage.recipes.length === 1 ? 'recipe' : 'recipes'} found` : 'AI response'}</p>
                         </div>
                       )}
-                      <div style={{ ...styles.bubble, ...(isUser ? styles.userBubble : styles.assistantBubble) }}>{chatMessage.content}</div>
-                      {canAnswerFollowUp && (
-                        <div style={styles.followUp}>
-                          <p style={styles.followUpLabel}>Choose anything you have or prefer:</p>
-                          <div style={styles.optionGrid}>
-                            {chatMessage.followUpOptions?.map((option) => {
-                              const isSelected = selectedForMessage.includes(option);
-
-                              return (
-                                <Button
-                                  key={option}
-                                  onClick={() => toggleOption(chatMessage.id, option)}
-                                  disabled={isLoading}
-                                  icon={<CheckCircleOutlined />}
-                                  style={{ ...styles.optionButton, ...(isSelected ? styles.selectedOption : {}) }}
-                                >
-                                  {option}
-                                </Button>
-                              );
-                            })}
-                          </div>
-                          <Button type="primary" onClick={() => submitOptions(chatMessage.id)} disabled={isLoading} style={styles.continueButton}>
-                            Continue with my choices
-                          </Button>
-                        </div>
-                      )}
-                      {canChooseFallback && (
-                        <div style={styles.fallbackChoices}>
-                          <p style={styles.followUpLabel}>Choose how you would like to continue:</p>
-                          {chatMessage.fallbackOptions?.map((option) => (
-                            <Button key={option.id} disabled={isLoading} onClick={() => onSelectFallback(option)} style={styles.fallbackButton}>
-                              {option.label}
+                      <div style={{ ...styles.bubble, ...(isUser ? styles.userBubble : styles.assistantBubble) }}>
+                        {chatMessage.content}
+                        {canAnswerFollowUp && (
+                          <div style={styles.followUp}>
+                            <p style={styles.followUpLabel}>Choose anything you have or prefer:</p>
+                            <div style={styles.optionGrid}>
+                              {chatMessage.followUpOptions?.map((option) => {
+                                const isSelected = selectedForMessage.includes(option);
+  
+                                return (
+                                  <Button
+                                    key={option}
+                                    onClick={() => toggleOption(chatMessage.id, option)}
+                                    disabled={isLoading}
+                                    icon={<CheckCircleOutlined />}
+                                    style={{ ...styles.optionButton, ...(isSelected ? styles.selectedOption : {}) }}
+                                  >
+                                    {option}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                            <Button type="primary" onClick={() => submitOptions(chatMessage.id)} disabled={isLoading || selectedForMessage.length === 0} style={styles.continueButton}>
+                              Continue with my choices
                             </Button>
-                          ))}
-                        </div>
-                      )}
+                          </div>
+                        )}
+                        {canChooseFallback && (
+                          <div style={styles.fallbackChoices}>
+                            <p style={styles.followUpLabel}>Choose how you would like to continue:</p>
+                            {chatMessage.fallbackOptions?.map((option) => (
+                              <Button key={option.id} disabled={isLoading} onClick={() => onSelectFallback(option)} style={styles.fallbackButton}>
+                                {option.label}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       {chatMessage.recipes && chatMessage.recipes.length > 0 && (
                         <>
                           <div style={styles.recipeList}>

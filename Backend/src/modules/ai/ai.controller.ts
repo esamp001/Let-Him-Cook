@@ -1,7 +1,8 @@
 import type { RequestHandler } from 'express';
 import { aiChatRequestSchema, aiRecipeRequestSchema, recipeDraftRequestSchema, type AiConversationDecision, type AiInitialChatModelResponse, type CookingPlan, type FallbackChoice } from './ai.types.js';
-import { decideConversationTurn, extractRecipeDraft, generateInitialChatTurn, generateRecipeSuggestions, resolveIngredientsToEnglish, selectExternalRecipeHighlights, updateConversationPlan } from './ollama.client.js';
-import { searchTheMealDbRecipes, searchTheMealDbRecipesByCuisine } from '../recipes/themealdb.client.js';
+import { answerShownRecipeQuestion, decideConversationTurn, extractRecipeDraft, generateInitialChatTurn, generateRecipeSuggestions, resolveIngredientsToEnglish, selectExternalRecipeHighlights, updateConversationPlan } from './ollama.client.js';
+import { getTheMealDbRecipeById, searchTheMealDbRecipes, searchTheMealDbRecipesByCuisine } from '../recipes/themealdb.client.js';
+import type { ExternalRecipe } from '../recipes/interfaces/ExternalRecipe.js';
 import { formatConversationReply, formatCuisineName, formatExternalRecipeExplanation, formatNoRecipeMatchReply, getFallbackOptions, isValidConversationDecision, isValidInitialChatTurn, normalizeIngredient, parseStructuredRecipeDraft, toExternalChatRecipe } from '../../back-end-helpers/ai-recipe.helpers.js';
 import { isOllamaError } from '../../back-end-helpers/ollama-error.helpers.js';
 
@@ -148,6 +149,18 @@ const getFallbackRecipes = async (plan: CookingPlan, choice: FallbackChoice) => 
   throw new Error(`Unsupported recipe fallback choice: ${choice}`);
 };
 
+const getShownRecipeAnswer = async (message: string, shownRecipeIds: string[]) => {
+  const shownRecipes: ExternalRecipe[] = [];
+
+  for (const id of shownRecipeIds) {
+    const recipe = await getTheMealDbRecipeById(id);
+    if (recipe) shownRecipes.push(recipe);
+  }
+
+  const { answer } = await answerShownRecipeQuestion(message, shownRecipes);
+  return answer;
+};
+
 export const continueCookingConversation: RequestHandler = async (request, response, next) => {
   const parsedRequest = aiChatRequestSchema.safeParse(request.body);
 
@@ -162,7 +175,8 @@ export const continueCookingConversation: RequestHandler = async (request, respo
     return;
   }
 
-  const { message, plan, fallbackChoice } = parsedRequest.data;
+  const { message, plan, fallbackChoice, shownRecipeIds } = parsedRequest.data;
+  let shownRecipeAnswer: string;
 
   try {
     if (fallbackChoice) {
@@ -204,6 +218,21 @@ export const continueCookingConversation: RequestHandler = async (request, respo
         return;
       }
 
+      if (initialTurn.userIntent === 'answer_only') {
+        shownRecipeAnswer = await getShownRecipeAnswer(message, shownRecipeIds);
+        response.status(200).json({
+          data: {
+            reply: shownRecipeAnswer,
+            action: 'answer',
+            plan,
+            followUpOptions: [],
+            fallbackOptions: [],
+            recipes: [],
+          },
+        });
+        return;
+      }
+
       const initialPlan = { ...initialTurn.plan, ingredients: await resolveIngredientsToEnglish(initialTurn.plan.ingredients), questionCount: 0 };
 
       if (initialTurn.userIntent === 'find_recipes_now') {
@@ -237,6 +266,22 @@ export const continueCookingConversation: RequestHandler = async (request, respo
     }
 
     const planUpdate = await updateConversationPlan(message, plan);
+
+    if (planUpdate.userIntent === 'answer_only') {
+      shownRecipeAnswer = await getShownRecipeAnswer(message, shownRecipeIds);
+      response.status(200).json({
+        data: {
+          reply: shownRecipeAnswer,
+          action: 'answer',
+          plan,
+          followUpOptions: [],
+          fallbackOptions: [],
+          recipes: [],
+        },
+      });
+      return;
+    }
+
     const updatedPlan = { ...planUpdate.plan, ingredients: await resolveIngredientsToEnglish(planUpdate.plan.ingredients), questionCount: plan.questionCount };
     console.log(planUpdate, 'OLLAMA CONVERSATION PLAN UPDATE');
 

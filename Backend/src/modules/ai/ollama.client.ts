@@ -354,5 +354,11 @@ export const selectExternalRecipeHighlights = async (plan: CookingPlan, recipes:
 
 export const answerShownRecipeQuestion = async (message: string, recipes: ExternalRecipe[]): Promise<AiShownRecipeAnswer> => {
   const generated = await generateStructuredResponse(buildShownRecipeAnswerPrompt(message, recipes), shownRecipeAnswerResponseFormat, 'shown recipe answer');
-  return aiShownRecipeAnswerSchema.parse(generated.result);
+  const parsedAnswer = aiShownRecipeAnswerSchema.safeParse(generated.result);
+
+  if (!parsedAnswer.success) {
+    throw createOllamaError('OLLAMA_INVALID_RESPONSE', 'The assistant did not return a usable answer.', parsedAnswer.error);
+  }
+
+  return parsedAnswer.data;
 };

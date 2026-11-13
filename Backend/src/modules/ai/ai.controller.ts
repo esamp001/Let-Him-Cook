@@ -346,6 +346,16 @@ export const continueCookingConversation: RequestHandler = async (request, respo
       return;
     }
 
+    if (isOllamaError(error, 'OLLAMA_INVALID_RESPONSE')) {
+      response.status(502).json({
+        error: {
+          code: 'AI_PROVIDER_INVALID_RESPONSE',
+          message: 'The recipe provider could not produce a valid response. Please try again.',
+        },
+      });
+      return;
+    }
+
     next(error);
   }
 };

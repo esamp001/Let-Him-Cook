@@ -9,7 +9,7 @@ export const aiIngredientResolutionSchema = z.object({
 });
 
 export const aiShownRecipeAnswerSchema = z.object({
-  answer: z.string().trim().min(1).max(800),
+  answer: z.string().trim().min(1).max(2_000),
 });
 
 export const shownRecipeAnswerResponseFormat = {

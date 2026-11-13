@@ -138,3 +138,114 @@ test('a question about shown recipes is answered from recipe data without a new 
     globalThis.fetch = originalFetch;
   }
 });
+
+test('a follow-up question about shown recipes skips the decision step and the recipe search', async () => {
+  const originalFetch = globalThis.fetch;
+  const ollamaOperations: string[] = [];
+  const mealDbPaths: string[] = [];
+  let responseBody: unknown;
+  let responseStatus = 0;
+  let nextError: unknown;
+
+  globalThis.fetch = async (input, init) => {
+    const url = new URL(String(input));
+
+    if (url.pathname === '/api/generate') {
+      const prompt = String(JSON.parse(String(init?.body)).prompt);
+      ollamaOperations.push(prompt.includes('cooking-plan extractor') ? 'plan update' : 'answer');
+      const generatedResponse = ollamaOperations.length === 1
+        ? { userIntent: 'answer_only', plan: { ingredients: ['tofu', 'pork'], cuisine: 'filipino', preferences: [] } }
+        : { answer: 'No. Hot and Sour Soup is listed as a Chinese recipe.' };
+      return new Response(JSON.stringify({ response: JSON.stringify(generatedResponse) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
+
+    mealDbPaths.push(`${url.pathname}${url.search}`);
+    return new Response(JSON.stringify({
+      meals: [{ idMeal: '52796', strMeal: 'Hot and Sour Soup', strArea: 'Chinese', strCategory: 'Pork', strInstructions: 'Simmer the soup.', strIngredient1: 'Tofu', strMeasure1: '200g' }],
+    }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  const plan = { ingredients: ['tofu'], cuisine: 'any', preferences: [], questionCount: 1 };
+  const request = { body: { message: 'Are these filipino foods?', plan, shownRecipeIds: ['52796'] } } as Request;
+  const expressResponse = {
+    status: (status: number) => {
+      responseStatus = status;
+      return expressResponse;
+    },
+    json: (body: unknown) => {
+      responseBody = body;
+      return expressResponse;
+    },
+  } as unknown as Response;
+  const next: NextFunction = (error?: unknown) => {
+    nextError = error;
+  };
+
+  try {
+    await continueCookingConversation(request, expressResponse, next);
+
+    assert.equal(nextError, undefined);
+    assert.equal(responseStatus, 200);
+    assert.deepEqual(ollamaOperations, ['plan update', 'answer']);
+    assert.equal(mealDbPaths.length, 1);
+    assert.match(mealDbPaths[0], /lookup\.php\?i=52796$/);
+    assert.deepEqual(responseBody, {
+      data: {
+        reply: 'No. Hot and Sour Soup is listed as a Chinese recipe.',
+        action: 'answer',
+        plan,
+        followUpOptions: [],
+        fallbackOptions: [],
+        recipes: [],
+      },
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test('an unusable shown-recipe answer returns a provider error instead of a server error', async () => {
+  const originalFetch = globalThis.fetch;
+  let ollamaRequestCount = 0;
+  let responseBody: unknown;
+  let responseStatus = 0;
+  let nextError: unknown;
+
+  globalThis.fetch = async () => {
+    ollamaRequestCount += 1;
+    const generatedResponse = ollamaRequestCount === 1
+      ? { userIntent: 'answer_only', plan: { ingredients: ['tofu'], cuisine: 'any', preferences: [] } }
+      : { answer: 'x'.repeat(2_001) };
+    return new Response(JSON.stringify({ response: JSON.stringify(generatedResponse) }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+  };
+
+  const request = { body: { message: 'How long do I fry tofu?', plan: { ingredients: ['tofu'], cuisine: 'any', preferences: [], questionCount: 1 } } } as Request;
+  const expressResponse = {
+    status: (status: number) => {
+      responseStatus = status;
+      return expressResponse;
+    },
+    json: (body: unknown) => {
+      responseBody = body;
+      return expressResponse;
+    },
+  } as unknown as Response;
+  const next: NextFunction = (error?: unknown) => {
+    nextError = error;
+  };
+
+  try {
+    await continueCookingConversation(request, expressResponse, next);
+
+    assert.equal(nextError, undefined);
+    assert.equal(responseStatus, 502);
+    assert.deepEqual(responseBody, {
+      error: {
+        code: 'AI_PROVIDER_INVALID_RESPONSE',
+        message: 'The recipe provider could not produce a valid response. Please try again.',
+      },
+    });
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});

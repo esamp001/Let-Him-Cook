@@ -148,11 +148,11 @@ Use versioned REST endpoints when appropriate, with `/api/v1` as the initial API
 
 Examples:
 - `POST /api/v1/ai/chat`
-- `POST /api/v1/recipes/search`
-- `GET /api/v1/recipes/:id`
-- `POST /api/v1/shopping-lists`
-- `GET /api/v1/shopping-lists`
-- `PATCH /api/v1/shopping-lists/:id/items/:itemId`
+- `GET /api/v1/recipes`
+- `POST /api/v1/auth/sign-in`, `GET /api/v1/auth/me`
+- `GET /api/v1/community/my-recipes`, `POST /api/v1/community/recipes/:recipeId/submit`
+- `GET /api/v1/shopping-list/items`, `PATCH /api/v1/shopping-list/items/:itemId`
+- `GET /api/v1/moderation/recipes` (admin only)
 
 Use consistent HTTP status codes, request validation, and error response formats.
 
@@ -314,9 +314,9 @@ backend/
 - Make changes incrementally and avoid unrelated refactoring.
 - If a new abstraction is necessary, explain briefly why it is needed.
 
-## Future Development — Community Recipes, Roles, and Moderation
+## Community Recipes, Roles, and Moderation
 
-Let Him Cook may grow its Filipino recipe coverage through community contributions. This is a future authenticated feature and must not be enabled for unauthenticated users.
+Let Him Cook grows its Filipino recipe coverage through community contributions. These features require an authenticated account and must not be enabled for unauthenticated users. The rules below are implemented; see "Accounts, Data Ownership, and Moderation (Implemented)" for where each one lives in the code.
 
 ### Recipe Visibility and Lifecycle
 
@@ -347,13 +347,50 @@ Apply ranking in this order:
 2. Rank primarily by available-ingredient coverage and missing required ingredients.
 3. Use community quality only as a secondary tie-breaker. A popular recipe with poor ingredient coverage must not outrank a recipe the user can cook with their available ingredients.
 
-For the MVP, use ingredient matching as the primary sort. Add reaction-based quality scoring only after authenticated reactions and moderation are implemented.
+For the MVP, use ingredient matching as the primary sort. Authenticated reactions and moderation now exist, so reaction counts (`helpful_count`, `not_helpful_count`) may be used as the secondary tie-breaker; this ranking change is not implemented yet.
 
 ### Suggested Future UI
 
 - Keep the `For you` tab for current chat results filtered by the user's available ingredients and preferences.
 - Add a `Community` tab for published recipes that supports browsing by cuisine, ingredient, popularity, and newest publication.
 - Place `Add recipe` within a user-owned recipe area, not on the chat-results surface.
+
+## Accounts, Data Ownership, and Moderation (Implemented)
+
+### Data Ownership
+
+- My Recipes, saved recipes (favorites), the shopping list, and chat conversations belong to the signed-in user and are stored in PostgreSQL: `community_recipes.author_user_id`, `saved_recipes`, `shopping_list_items`, and `chat_conversations`. Each has a `user_id` foreign key with `ON DELETE CASCADE`, so deleting an account deletes its data.
+- Backend modules: `community` (`/api/v1/community`), `favorites` (`/api/v1/favorites`), `shopping-list` (`/api/v1/shopping-list/items`), and `conversations` (`/api/v1/conversations`). All are protected by `requireAuth`.
+- Signed-out visitors can browse and chat. Saving recipes, favorites, the shopping list, and chat history show a sign-in prompt (`SignInPrompt`) and return the user to the page afterwards. Chats started as a guest are saved to the account when the user signs in.
+
+### Roles
+
+- Roles are `user` and `admin` (`users.role`). Admin-only routes use `requireAuth` then `requireRole('admin')`, which returns `403`.
+- The admin account is created only by the admin seed (`Backend/seeds/01_admin_user.ts`), which `Backend/migrate-all-tenants.bat` runs after the migrations. It inserts the admin into `users` with `role = 'admin'` and a verified email when no account uses `ADMIN_EMAIL`; if one already exists, it changes nothing. There is no other way to create or promote an admin: no script, endpoint, or UI.
+- The admin's email, name, and password come from `ADMIN_EMAIL`, `ADMIN_NAME`, and `ADMIN_PASSWORD` in `Backend/.env`. Without them, development defaults are used (`admin@lethimcook.local`, `Let Him Cook Admin`, `Admin@12345`); in production the seed refuses to run with the default password.
+- The admin-only Moderation page is `/Moderation` and appears in the account menu for admins.
+
+### Content Visibility
+
+- Lifecycle: `private` → `pending_review` (owner submits, verified email required) → `published` (admin approves). Admins may also reject, unpublish, or restore; flagged recipes become `needs_review`.
+- Allowed moderator transitions and submission rules live in `Backend/src/back-end-helpers/community-moderation.helpers.ts` (`getNextModerationStatus`, `canSubmitForReview`). The Moderation page mirrors them to offer only valid actions.
+- Only `published` recipes appear in the public recipe browse and accept reactions or reports. The owner and admins can still read feedback for their unpublished recipes. Every moderator action is recorded in `recipe_moderation_events`.
+
+### Community Feedback
+
+- One `helpful` or `not_helpful` reaction per user per recipe; reacting again changes it, and it can be removed. Owners cannot rate or report their own recipes.
+- Reports need a reason; a user may have only one open report per recipe.
+- `shouldFlagForReview` moves a published recipe to `needs_review` after 3 open reports from different users, or after at least 5 `not_helpful` reactions that outnumber `helpful` ones. Flagging hides the recipe for review; it never deletes it. When an admin decides on a flagged recipe, its open reports are resolved.
+
+### Account Security
+
+- Rate limits (`Backend/src/middleware/rateLimits.ts`, in memory per server process): sign-in 10 per 15 minutes, sign-up 5 per hour, account emails 5 per 15 minutes, and link confirmations 20 per 15 minutes per IP. Set `TRUST_PROXY_HOPS=1` behind Nginx so limits see the real client IP.
+- Email verification: sign-up emails a 24-hour link to `/Verify-Email`. Google accounts are verified automatically. Unverified users can sign in, but submitting, rating, and reporting community recipes require `requireVerifiedEmail`.
+- Password reset: `/api/v1/auth/password-reset/request` always answers the same way, so emails cannot be discovered. The 30-minute link opens `/Reset-Password`; using it changes the password, verifies the email, and signs out every session.
+- Emailed tokens and session tokens are stored only as SHA-256 hashes (`auth_tokens`, `user_sessions`). Each link works once, and a newer link replaces older unused ones.
+- Sign out of all devices: `POST /api/v1/auth/sign-out-all` deletes every session for the user.
+- Expired sessions and link tokens are deleted by `startSessionCleanupJob`, which runs at server start and then hourly.
+- Emails are sent with nodemailer using the `SMTP_*` settings. When `SMTP_HOST` is empty in development, the email is printed to the backend console instead (development-only scaffolding); in production a missing SMTP configuration is an error.
 
 
 ## Coding Standards
@@ -401,7 +438,9 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
 ### Authentication and Sign-In Redirect Standard
 
 - The backend decides who may access data. Protect every private API route (for example personal recipes, saves, reactions, reports, and submissions) with the `requireAuth` middleware, and read the signed-in user from `response.locals.authUser`. Never trust a user ID sent by the frontend.
-- Admin routes must also check that `response.locals.authUser.role` is `admin` and return `403` otherwise. Add a role-checking middleware when the first admin route is created.
+- Admin routes must also use `requireRole('admin')` from `Backend/src/middleware/requireRole.ts` after `requireAuth`, which returns `403` for other roles.
+- Community actions that need a confirmed email (submitting, rating, reporting) also use `requireVerifiedEmail`. Public routes that show extra details to signed-in users use `optionalAuth`.
+- Rate-limit public account endpoints (sign-in, sign-up, emails, link confirmations) with the limiters in `Backend/src/middleware/rateLimits.ts`.
 - Frontend sign-in gates and prompts only improve the experience; they never replace the backend check.
 - When the frontend asks a user to sign in, send them to the login page with the current page as `redirect`, built with `buildLoginPath(currentPath)` from `Frontend/src/front-end-helpers/auth-redirect.helpers.ts`.
 - After a successful sign-in (email or Google), return the user to that page. Pass every `redirect` value through `getSafeRedirectPath` (frontend and backend helpers) so only same-site paths are used and the app cannot be used as an open redirect.
@@ -414,6 +453,22 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
   Sign in
 </Button>
 ```
+
+### Data Ownership Standard
+
+- Every user-owned table has a `user_id` (or `author_user_id`) column with a foreign key to `users` and `ON DELETE CASCADE`.
+- Repository queries for user-owned data always filter by the signed-in user's ID from `response.locals.authUser.id`, for example `.where({ id: itemId, user_id: userId })`. Never accept an owner ID from the request.
+- When a user asks for another user's record, respond `404` (not found), not `403`, so record IDs cannot be probed.
+- When the client creates record IDs (such as chat conversation IDs), check the existing owner before an upsert so one user can never overwrite another user's record.
+- `table.timestamps(true, true, true)` creates camelCase `createdAt` and `updatedAt` columns; use those names in queries and indexes.
+- Serialize arrays with `JSON.stringify` before writing them to `jsonb` columns; the `pg` driver otherwise sends JavaScript arrays as PostgreSQL arrays.
+
+### Frontend Shared State Standard
+
+- Share app-wide state, such as the signed-in user and saved recipes, through a React context instead of loading it separately in each component.
+- Create the context object in `Frontend/src/context/`, the provider component in `Frontend/src/components/` (for example `CurrentUserProvider.tsx`), and a hook in `Frontend/src/hooks/` that reads it and throws when used outside the provider (for example `useCurrentUser`).
+- Wrap providers around `<App />` in `main.tsx`. Data that belongs to one user must reload when `currentUser.id` changes and clear when the user signs out.
+- Type API payloads at the call site with `ApiResponse<TData>` from `Frontend/src/types/interfaces/ApiResponse.ts`.
 
 ### TypeScript Declaration and Naming Standard
 

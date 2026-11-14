@@ -247,7 +247,7 @@ const RecipesPage = ({
         <Button type="primary" icon={<PlusOutlined />} onClick={onContributeRecipe}>Add Recipe</Button>
       </div>
 
-      <p style={styles.aiNotice}>Browse TheMealDB recipes. Approved user recipes will appear here when community publishing is available.</p>
+      <p style={styles.aiNotice}>Browse TheMealDB recipes and community recipes approved by our moderators.</p>
 
       <div style={styles.browseFilters}>
         <Input.Search

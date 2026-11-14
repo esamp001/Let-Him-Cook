@@ -1,6 +1,6 @@
 import { cloneElement, type CSSProperties, type ReactElement } from 'react';
-import { BookOutlined, LogoutOutlined } from '@ant-design/icons';
-import { Avatar, Badge, Button, Dropdown, message, type MenuProps } from 'antd';
+import { BookOutlined, DisconnectOutlined, LogoutOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { Avatar, Badge, Button, Dropdown, Modal, Tag, message, type MenuProps } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChefHatIcon } from './ChefHatIcon';
 import { useCurrentUser } from '../hooks/useCurrentUser';
@@ -12,7 +12,12 @@ import './Navbar.css';
 const userMenuItems: MenuProps['items'] = [
   { key: 'my-recipes', label: 'My recipes', icon: <BookOutlined /> },
   { type: 'divider' },
+  { key: 'sign-out-all', label: 'Sign out of all devices', icon: <DisconnectOutlined /> },
   { key: 'sign-out', label: 'Sign out', icon: <LogoutOutlined />, danger: true },
+];
+
+const adminMenuItems: MenuProps['items'] = [
+  { key: 'moderation', label: 'Moderation', icon: <SafetyCertificateOutlined /> },
 ];
 
 const avatarButtonStyle: CSSProperties = {
@@ -70,12 +75,33 @@ const signInButtonStyle: CSSProperties = {
 export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, isLoadingUser, signOut } = useCurrentUser();
+  const { currentUser, isLoadingUser, signOut, signOutAllDevices } = useCurrentUser();
   const path = location.pathname.toLowerCase();
+  const menuItems = currentUser?.role === 'admin' ? [...(adminMenuItems ?? []), ...(userMenuItems ?? [])] : userMenuItems;
+
+  const handleSignOutAllDevices = async () => {
+    try {
+      await signOutAllDevices();
+      message.success('You are signed out on every device.');
+      navigate('/Home');
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to sign out of all devices.');
+    }
+  };
 
   const handleUserMenuClick: MenuProps['onClick'] = async ({ key }) => {
-    if (key === 'my-recipes') {
-      navigate('/My-Recipes');
+    if (key === 'my-recipes' || key === 'moderation') {
+      navigate(key === 'my-recipes' ? '/My-Recipes' : '/Moderation');
+      return;
+    }
+
+    if (key === 'sign-out-all') {
+      Modal.confirm({
+        title: 'Sign out of all devices?',
+        content: 'This signs you out everywhere, including this browser.',
+        okText: 'Sign out everywhere',
+        onOk: handleSignOutAllDevices,
+      });
       return;
     }
 
@@ -152,7 +178,7 @@ export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
             <Dropdown
               trigger={['click']}
               placement="bottomRight"
-              menu={{ items: userMenuItems, onClick: handleUserMenuClick }}
+              menu={{ items: menuItems, onClick: handleUserMenuClick }}
               popupRender={(menu) => (
                 <div style={userMenuPanelStyle}>
                   <div style={userMenuHeaderStyle}>
@@ -165,6 +191,8 @@ export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
                     <div>
                       <p style={userMenuNameStyle}>{currentUser.name}</p>
                       <p style={userMenuEmailStyle}>{currentUser.email}</p>
+                      {currentUser.role === 'admin' && <Tag color="green">Admin</Tag>}
+                      {!currentUser.emailVerified && <Tag color="orange">Email not confirmed</Tag>}
                     </div>
                   </div>
                   {cloneElement(menu as ReactElement<{ style?: CSSProperties }>, { style: userMenuListStyle })}

@@ -1,8 +1,15 @@
-import { useState, type CSSProperties } from 'react';
-import { CheckOutlined, EditOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
-import { Button, Card, Divider, Input, List, Select, Space, Tag, Typography } from 'antd';
+import { useEffect, useState, type CSSProperties } from 'react';
+import { CheckOutlined, DeleteOutlined, EditOutlined, HeartFilled, PlusOutlined, SaveOutlined, SendOutlined } from '@ant-design/icons';
+import { Button, Card, Divider, Input, List, Popconfirm, Select, Space, Tag, Tooltip, Typography } from 'antd';
+import { SignInPrompt } from '../components/SignInPrompt';
 import { toast } from '../components/Toast';
+import { toBrowseUiRecipe } from '../front-end-helpers/recipe-browse.helpers';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import { useFavorites } from '../hooks/useFavorites';
+import type { CommunityRecipeStatus } from '../types/community';
 import type { RecipeCuisine } from '../types/recipe';
+import type { ApiResponse } from '../types/interfaces/ApiResponse';
+import type { CommunityRecipe } from '../types/interfaces/CommunityRecipe';
 import type { Recipe } from '../types/interfaces/Recipe';
 import type { RecipeDraft } from '../types/interfaces/RecipeDraft';
 import type { RecipeDraftApiResponse } from '../types/interfaces/RecipeDraftApiResponse';
@@ -97,15 +104,63 @@ const styles: Record<string, CSSProperties> = {
   },
   savedItem: {
     cursor: 'pointer'
+  },
+  statusNote: {
+    margin: '4px 0 0',
+    fontSize: 13,
+    color: culinaryPalette.textMuted
   }
 };
 
 const maxRecipeTextLength = 4_000;
 
-const MyRecipesPage = ({ recipes, onSaveRecipe, onSelectRecipe }: MyRecipesPageProps) => {
+const recipeStatusDetails: Record<CommunityRecipeStatus, { label: string; color: string; note: string }> = {
+  private: { label: 'Private', color: 'default', note: 'Only you can see this recipe.' },
+  pending_review: { label: 'Waiting for review', color: 'blue', note: 'A moderator will review it before it is published.' },
+  published: { label: 'Published', color: 'green', note: 'Everyone can find it in the Community recipes.' },
+  needs_review: { label: 'Under review', color: 'orange', note: 'Hidden while a moderator checks community feedback.' },
+  unpublished: { label: 'Unpublished', color: 'default', note: 'A moderator took it down. You can submit it again.' },
+  rejected: { label: 'Not approved', color: 'red', note: 'You can edit your notes and submit it again.' },
+};
+
+const submittableStatuses: readonly CommunityRecipeStatus[] = ['private', 'rejected', 'unpublished'];
+
+const MyRecipesPage = ({ onSelectRecipe }: MyRecipesPageProps) => {
+  const { currentUser, isLoadingUser } = useCurrentUser();
+  const { favorites, toggleFavorite } = useFavorites();
   const [rawText, setRawText] = useState('');
   const [draft, setDraft] = useState<RecipeDraft | null>(null);
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
+  const [myRecipes, setMyRecipes] = useState<CommunityRecipe[]>([]);
+  const [isSavingRecipe, setIsSavingRecipe] = useState(false);
+  const [busyRecipeId, setBusyRecipeId] = useState<string | null>(null);
+  const userId = currentUser?.id;
+  const myUiRecipes: Recipe[] = myRecipes.map((recipe) => ({ ...toBrowseUiRecipe(recipe), imageUrl: recipe.imageUrl ?? generatedRecipeImage }));
+  const savedRecipes = favorites.map((favorite) => favorite.recipe);
+
+  useEffect(() => {
+    if (!userId) {
+      setMyRecipes([]);
+      return;
+    }
+
+    const loadMyRecipes = async () => {
+      try {
+        const apiResponse = await fetch('/api/v1/community/my-recipes');
+        const response = await apiResponse.json() as ApiResponse<{ recipes: CommunityRecipe[] }>;
+
+        if (!apiResponse.ok || !response.data) {
+          throw new Error(response.error?.message ?? 'Unable to load your recipes.');
+        }
+
+        setMyRecipes(response.data.recipes);
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : 'Unable to load your recipes.');
+      }
+    };
+
+    void loadMyRecipes();
+  }, [userId]);
 
   const createDraft = async () => {
     if (rawText.trim().length < 20) {
@@ -167,41 +222,110 @@ const MyRecipesPage = ({ recipes, onSaveRecipe, onSelectRecipe }: MyRecipesPageP
     });
   };
 
-  const saveRecipe = () => {
+  const saveRecipe = async () => {
     if (!draft) return;
 
-    const savedRecipe: Recipe = {
-      id: crypto.randomUUID(),
+    const newRecipe = {
       title: draft.title.trim(),
       description: draft.description.trim(),
-      cuisine: draft.cuisine,
-      imageUrl: generatedRecipeImage,
+      cuisine: draft.cuisine === 'any' ? null : draft.cuisine,
       cookingTimeMinutes: draft.cookingTimeMinutes,
       difficulty: draft.difficulty,
       ingredients: draft.ingredients.filter((ingredient) => ingredient.name.trim()).map((ingredient) => ({
         name: ingredient.name.trim(),
-        quantity: ingredient.quantity.trim() || 'Not specified',
+        quantity: ingredient.quantity.trim(),
         isOptional: ingredient.optional,
       })),
       steps: draft.steps.map((step) => step.trim()).filter(Boolean),
     };
 
-    if (!savedRecipe.title || savedRecipe.ingredients.length === 0 || savedRecipe.steps.length === 0) {
+    if (!newRecipe.title || newRecipe.ingredients.length === 0 || newRecipe.steps.length === 0) {
       toast.warning('Add a title, at least one ingredient, and one cooking step before saving.');
       return;
     }
 
-    onSaveRecipe(savedRecipe);
-    toast.success(`${savedRecipe.title} was saved to My recipes.`);
-    setDraft(null);
-    setRawText('');
+    setIsSavingRecipe(true);
+
+    try {
+      const apiResponse = await fetch('/api/v1/community/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newRecipe),
+      });
+
+      const response = await apiResponse.json() as ApiResponse<{ recipe: CommunityRecipe }>;
+
+      if (!apiResponse.ok || !response.data) {
+        throw new Error(response.error?.message ?? 'Unable to save this recipe.');
+      }
+
+      const { recipe } = response.data;
+      setMyRecipes((previousRecipes) => [recipe, ...previousRecipes]);
+      toast.success(`${recipe.title} was saved privately to My recipes.`);
+      setDraft(null);
+      setRawText('');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to save this recipe.');
+    } finally {
+      setIsSavingRecipe(false);
+    }
   };
+
+  const submitForReview = async (recipe: CommunityRecipe) => {
+    setBusyRecipeId(recipe.recipeId);
+
+    try {
+      const apiResponse = await fetch(`/api/v1/community/recipes/${recipe.recipeId}/submit`, { method: 'POST' });
+      const response = await apiResponse.json() as ApiResponse<{ status: CommunityRecipeStatus }>;
+
+      if (!apiResponse.ok || !response.data) {
+        throw new Error(response.error?.message ?? 'Unable to submit this recipe.');
+      }
+
+      const { status } = response.data;
+      setMyRecipes((previousRecipes) => previousRecipes.map((myRecipe) => myRecipe.recipeId === recipe.recipeId ? { ...myRecipe, status } : myRecipe));
+      toast.success(`${recipe.title} was sent to the moderators.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to submit this recipe.');
+    } finally {
+      setBusyRecipeId(null);
+    }
+  };
+
+  const deleteMyRecipe = async (recipe: CommunityRecipe) => {
+    setBusyRecipeId(recipe.recipeId);
+
+    try {
+      const apiResponse = await fetch(`/api/v1/community/recipes/${recipe.recipeId}`, { method: 'DELETE' });
+      const response = await apiResponse.json() as ApiResponse<{ deleted: boolean }>;
+
+      if (!apiResponse.ok || !response.data) {
+        throw new Error(response.error?.message ?? 'Unable to delete this recipe.');
+      }
+
+      setMyRecipes((previousRecipes) => previousRecipes.filter((myRecipe) => myRecipe.recipeId !== recipe.recipeId));
+      toast.success(`${recipe.title} was deleted.`);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to delete this recipe.');
+    } finally {
+      setBusyRecipeId(null);
+    }
+  };
+
+  if (!isLoadingUser && !currentUser) {
+    return (
+      <SignInPrompt
+        title="Sign in to see your recipes"
+        description="Save your own recipes privately, submit them to the community, and keep the recipes you love."
+      />
+    );
+  }
 
   return (
     <section style={styles.page}>
       <div style={styles.container}>
         <Typography.Title level={1} style={styles.heading}>My recipes</Typography.Title>
-        <p style={styles.intro}>Paste a recipe, family cooking notes, or an ingredient list. Let Him Cook creates an editable draft before you save it. Community submission will be available after accounts and moderation are added.</p>
+        <p style={styles.intro}>Paste a recipe, family cooking notes, or an ingredient list. Let Him Cook creates an editable draft before you save it. Saved recipes stay private until you submit them to the community for review.</p>
 
         <Card style={styles.card}>
           <label htmlFor="recipe-text" style={styles.fieldLabel}>Recipe text</label>
@@ -271,27 +395,114 @@ const MyRecipesPage = ({ recipes, onSaveRecipe, onSelectRecipe }: MyRecipesPageP
 
             <Divider />
             <Space wrap>
-              <Button type="primary" icon={<SaveOutlined />} onClick={saveRecipe}>Save privately</Button>
-              <Button disabled>Submit to community</Button>
+              <Button
+                type="primary"
+                icon={<SaveOutlined />}
+                loading={isSavingRecipe}
+                onClick={saveRecipe}
+              >
+                Save privately
+              </Button>
               <Button onClick={() => setDraft(null)}>Discard draft</Button>
             </Space>
-            <Typography.Paragraph type="secondary" style={{ margin: '12px 0 0' }}>Community submission will be enabled after sign-in and administrator review are available.</Typography.Paragraph>
+            <Typography.Paragraph type="secondary" style={{ margin: '12px 0 0' }}>Your recipe stays private until you submit it. A moderator reviews it before it appears in the Community recipes.</Typography.Paragraph>
           </Card>
         )}
 
         <Card style={styles.card}>
           <div style={styles.savedHeader}>
-            <Typography.Title level={3} style={{ margin: 0 }}>Saved recipes</Typography.Title>
-            <Tag icon={<CheckOutlined />}>{recipes.length}</Tag>
+            <Typography.Title level={3} style={{ margin: 0 }}>My recipes</Typography.Title>
+            <Tag icon={<CheckOutlined />}>{myRecipes.length}</Tag>
           </div>
-          {recipes.length === 0 ? (
-            <Typography.Text type="secondary">Your approved recipe drafts will appear here.</Typography.Text>
+          {myRecipes.length === 0 ? (
+            <Typography.Text type="secondary">Recipes you save privately will appear here.</Typography.Text>
           ) : (
             <List
-              dataSource={recipes}
-              renderItem={(recipe) => (
-                <List.Item style={styles.savedItem} onClick={() => onSelectRecipe(recipe)}>
-                  <List.Item.Meta title={recipe.title} description={`${recipe.ingredients.length} ingredients · ${recipe.steps.length} steps`} />
+              dataSource={myRecipes}
+              renderItem={(recipe, index) => (
+                <List.Item
+                  actions={[
+                    submittableStatuses.includes(recipe.status) && (
+                      <Tooltip
+                        key="submit"
+                        title={currentUser?.emailVerified ? '' : 'Confirm your email first to submit recipes.'}
+                      >
+                        <Button
+                          size="small"
+                          icon={<SendOutlined />}
+                          disabled={!currentUser?.emailVerified}
+                          loading={busyRecipeId === recipe.recipeId}
+                          onClick={() => void submitForReview(recipe)}
+                        >
+                          Submit for review
+                        </Button>
+                      </Tooltip>
+                    ),
+                    <Popconfirm
+                      key="delete"
+                      title="Delete this recipe?"
+                      description="This cannot be undone."
+                      okText="Delete"
+                      okButtonProps={{ danger: true }}
+                      onConfirm={() => deleteMyRecipe(recipe)}
+                    >
+                      <Button
+                        size="small"
+                        danger
+                        type="text"
+                        icon={<DeleteOutlined />}
+                        aria-label={`Delete ${recipe.title}`}
+                      />
+                    </Popconfirm>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={(
+                      <Space wrap>
+                        <Typography.Link onClick={() => onSelectRecipe(myUiRecipes[index], myUiRecipes)}>{recipe.title}</Typography.Link>
+                        <Tag color={recipeStatusDetails[recipe.status].color}>{recipeStatusDetails[recipe.status].label}</Tag>
+                      </Space>
+                    )}
+                    description={(
+                      <>
+                        {`${recipe.ingredients.length} ingredients · ${recipe.steps.length} steps`}
+                        <p style={styles.statusNote}>{recipeStatusDetails[recipe.status].note}</p>
+                      </>
+                    )}
+                  />
+                </List.Item>
+              )}
+            />
+          )}
+        </Card>
+
+        <Card style={styles.card}>
+          <div style={styles.savedHeader}>
+            <Typography.Title level={3} style={{ margin: 0 }}>Saved recipes</Typography.Title>
+            <Tag icon={<HeartFilled />}>{favorites.length}</Tag>
+          </div>
+          {favorites.length === 0 ? (
+            <Typography.Text type="secondary">Tap the heart on any recipe to save it here.</Typography.Text>
+          ) : (
+            <List
+              dataSource={favorites}
+              renderItem={(favorite) => (
+                <List.Item
+                  actions={[
+                    <Button
+                      key="unsave"
+                      size="small"
+                      type="text"
+                      onClick={() => void toggleFavorite(favorite.recipe)}
+                    >
+                      Remove
+                    </Button>,
+                  ]}
+                >
+                  <List.Item.Meta
+                    title={<Typography.Link onClick={() => onSelectRecipe(favorite.recipe, savedRecipes)}>{favorite.recipe.title}</Typography.Link>}
+                    description={`${favorite.recipe.ingredients.length} ingredients · ${favorite.recipe.steps.length} steps`}
+                  />
                 </List.Item>
               )}
             />

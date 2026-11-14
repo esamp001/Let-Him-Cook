@@ -1,5 +1,7 @@
-import { useEffect, useState, type CSSProperties } from 'react';
+import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { message } from 'antd';
 import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { EmailVerificationBanner } from './components/EmailVerificationBanner';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { ToastContainer } from './components/Toast';
@@ -9,7 +11,14 @@ import ShoppingListPage from './pages/ShoppingListPage';
 import CookingChatPage from './pages/CookingChatPage';
 import MyRecipesPage from './pages/MyRecipesPage';
 import LoginPage from './pages/LoginPage';
+import ModerationPage from './pages/ModerationPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
+import VerifyEmailPage from './pages/VerifyEmailPage';
+import { buildLoginPath } from './front-end-helpers/auth-redirect.helpers';
+import { useCurrentUser } from './hooks/useCurrentUser';
+import { useShoppingList } from './hooks/useShoppingList';
 import type { CuisinePreference, FallbackChoice } from './types/ai';
+import type { ApiResponse } from './types/interfaces/ApiResponse';
 import type { ChatMessage } from './types/interfaces/ChatMessage';
 import type { CookingConversation } from './types/interfaces/CookingConversation';
 import type { CookingPlan } from './types/interfaces/CookingPlan';
@@ -21,16 +30,6 @@ import type { AiRecipe } from './types/interfaces/AiRecipe';
 import { culinaryPalette } from './theme/themeConfig';
 import generatedRecipeImage from './assets/Rustic Herb Chicken Bowl with Fresh Garnishes.png';
 
-// Initial shopping items based on the design mockup
-const initialShoppingList: ShoppingItem[] = [
-  { id: '1', name: 'Chicken breast', quantity: '500 g', checked: false },
-  { id: '2', name: 'Potatoes', quantity: '4 medium', checked: false },
-  { id: '3', name: 'Onion', quantity: '1', checked: false },
-  { id: '4', name: 'Garlic', quantity: '3 cloves', checked: false },
-  { id: '5', name: 'Chicken broth', quantity: '1 L', checked: false },
-  { id: '6', name: 'Fresh parsley (optional)', quantity: '1 bunch', checked: false },
-];
-
 const appShellStyle: CSSProperties = {
   minHeight: '100vh',
   display: 'flex',
@@ -40,36 +39,12 @@ const appShellStyle: CSSProperties = {
 const mainContentStyle: CSSProperties = {
   flex: 1
 };
-const conversationStorageKey = 'let-him-cook-conversations';
-const personalRecipeStorageKey = 'let-him-cook-personal-recipes';
 
 const emptyCookingPlan: CookingPlan = {
   ingredients: [],
   cuisine: 'any',
   preferences: [],
   questionCount: 0,
-};
-
-const getSavedConversations = (): CookingConversation[] => {
-  try {
-    const storedConversations = window.localStorage.getItem(conversationStorageKey);
-    const parsedConversations: unknown = storedConversations ? JSON.parse(storedConversations) : [];
-
-    return Array.isArray(parsedConversations) ? parsedConversations as CookingConversation[] : [];
-  } catch {
-    return [];
-  }
-};
-
-const getSavedPersonalRecipes = (): Recipe[] => {
-  try {
-    const storedRecipes = window.localStorage.getItem(personalRecipeStorageKey);
-    const parsedRecipes: unknown = storedRecipes ? JSON.parse(storedRecipes) : [];
-
-    return Array.isArray(parsedRecipes) ? parsedRecipes as Recipe[] : [];
-  } catch {
-    return [];
-  }
 };
 
 const mapAiRecipe = (recipe: AiRecipe): Recipe => {
@@ -95,10 +70,13 @@ const mapAiRecipe = (recipe: AiRecipe): Recipe => {
 
 function App() {
   const navigate = useNavigate();
-  const isAuthPage = useLocation().pathname.toLowerCase() === '/login';
+  const location = useLocation();
+  const isAuthPage = location.pathname.toLowerCase() === '/login';
+  const { currentUser } = useCurrentUser();
+  const userId = currentUser?.id;
+  const { shoppingList, addShoppingItems, toggleShoppingItem, deleteShoppingItem, clearShoppingList } = useShoppingList();
   const [searchQuery, setSearchQuery] = useState('chicken + potatoes');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
-  const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(initialShoppingList);
   const [aiRecipes, setAiRecipes] = useState<Recipe[] | null>(null);
 
   const [aiPreferences, setAiPreferences] = useState<string[]>([]);
@@ -106,27 +84,79 @@ function App() {
   const aiSearchError = null;
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [cookingPlan, setCookingPlan] = useState<CookingPlan>(emptyCookingPlan);
-  const [conversations, setConversations] = useState<CookingConversation[]>(getSavedConversations);
-  const [personalRecipes, setPersonalRecipes] = useState<Recipe[]>(getSavedPersonalRecipes);
+  const [conversations, setConversations] = useState<CookingConversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
   const [isChatLoading, setIsChatLoading] = useState(false);
   const [chatError, setChatError] = useState<string | null>(null);
+  // Read inside the sign-in effect so a guest's chats can be saved to the new account without re-running it.
+  const conversationsRef = useRef(conversations);
 
   useEffect(() => {
-    try {
-      window.localStorage.setItem(conversationStorageKey, JSON.stringify(conversations));
-    } catch {
-      // Conversation history remains available during this browser session if storage is full or unavailable.
-    }
+    conversationsRef.current = conversations;
   }, [conversations]);
 
+  // Conversation history belongs to the signed-in user. Guests keep chats only until they leave the page.
   useEffect(() => {
-    try {
-      window.localStorage.setItem(personalRecipeStorageKey, JSON.stringify(personalRecipes));
-    } catch {
-      // Personal recipes remain available during this browser session if storage is full or unavailable.
+    if (!userId) {
+      setConversations([]);
+      setChatMessages([]);
+      setActiveConversationId(null);
+      return;
     }
-  }, [personalRecipes]);
+
+    const loadConversations = async () => {
+      try {
+        // Keep any chats started before signing in by saving them to the account first.
+        for (const conversation of conversationsRef.current.filter((guestConversation) => guestConversation.messages.length > 0)) {
+          await fetch(`/api/v1/conversations/${conversation.id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title: conversation.title, messages: conversation.messages, plan: conversation.plan }),
+          });
+        }
+
+        const apiResponse = await fetch('/api/v1/conversations');
+        const response = await apiResponse.json() as ApiResponse<{ conversations: CookingConversation[] }>;
+
+        if (!apiResponse.ok || !response.data) {
+          throw new Error(response.error?.message ?? 'Unable to load your conversations.');
+        }
+
+        setConversations(response.data.conversations);
+      } catch (error) {
+        message.error(error instanceof Error ? error.message : 'Unable to load your conversations.');
+      }
+    };
+
+    void loadConversations();
+  }, [userId]);
+
+  // Save the open conversation to the account whenever it changes.
+  useEffect(() => {
+    const activeConversation = conversations.find((conversation) => conversation.id === activeConversationId);
+
+    if (!userId || !activeConversation || activeConversation.messages.length === 0) return;
+
+    const saveConversation = async () => {
+      try {
+        const apiResponse = await fetch(`/api/v1/conversations/${activeConversation.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title: activeConversation.title, messages: activeConversation.messages, plan: activeConversation.plan }),
+        });
+
+        const response = await apiResponse.json() as ApiResponse<{ saved: boolean }>;
+
+        if (!apiResponse.ok || !response.data) {
+          throw new Error(response.error?.message ?? 'Unable to save this conversation.');
+        }
+      } catch (error) {
+        message.error({ content: error instanceof Error ? error.message : 'Unable to save this conversation.', key: 'conversation-save' });
+      }
+    };
+
+    void saveConversation();
+  }, [activeConversationId, conversations, userId]);
 
   useEffect(() => {
     if (!activeConversationId || chatMessages.length === 0) return;
@@ -238,13 +268,9 @@ function App() {
     setChatError(null);
   };
 
-  const handleSavePersonalRecipe = (recipe: Recipe) => {
-    setPersonalRecipes((previous) => [recipe, ...previous]);
-  };
-
-  const handleSelectPersonalRecipe = (recipe: Recipe) => {
-    setAiRecipes(personalRecipes);
-    setAiPreferences(['Private recipe']);
+  const handleSelectPersonalRecipe = (recipe: Recipe, recipes: Recipe[]) => {
+    setAiRecipes(recipes);
+    setAiPreferences(['My recipes']);
     setSelectedRecipe(recipe);
     navigate('/Recipes');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -276,46 +302,20 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Add items from recipe to shopping list
+  // Add items from a recipe to the signed-in user's shopping list
   const handleAddToShoppingList = (items: ShoppingItem[]) => {
-    setShoppingList((prev) => {
-      // Append only items that are not already in the list
-      const existingNames = new Set(prev.map((i) => i.name.toLowerCase()));
-      const filteredNew = items.filter(
-        (item) => !existingNames.has(item.name.toLowerCase())
-      );
-      return [...prev, ...filteredNew];
-    });
-  };
+    if (!currentUser) {
+      message.info('Sign in to keep a shopping list.');
+      navigate(buildLoginPath(`${location.pathname}${location.search}`));
+      return;
+    }
 
-  // Shopping list item toggle
-  const handleToggleShoppingItem = (id: string) => {
-    setShoppingList((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
-  };
-
-  // Delete shopping item
-  const handleDeleteShoppingItem = (id: string) => {
-    setShoppingList((prev) => prev.filter((item) => item.id !== id));
-  };
-
-  // Clear shopping list
-  const handleClearShoppingList = () => {
-    setShoppingList([]);
+    void addShoppingItems(items.map(({ name, quantity }) => ({ name, quantity })));
   };
 
   // Add custom shopping item
   const handleAddCustomShoppingItem = (name: string, quantity: string) => {
-    const newItem: ShoppingItem = {
-      id: crypto.randomUUID(),
-      name,
-      quantity,
-      checked: false,
-    };
-    setShoppingList((prev) => [newItem, ...prev]);
+    void addShoppingItems([{ name, quantity }]);
   };
 
   const handleExploreRecipes = () => {
@@ -328,6 +328,7 @@ function App() {
     <div style={appShellStyle}>
       {/* Top Navigation Bar */}
       {!isAuthPage && <Navbar shoppingListCount={shoppingList.filter((i) => !i.checked).length} />}
+      {!isAuthPage && <EmailVerificationBanner />}
 
       {/* Main Page Body */}
       <main style={mainContentStyle}>
@@ -382,19 +383,23 @@ function App() {
           <Route path="/recipes" element={<Navigate to="/Recipes" replace />} />
           <Route
             path="/My-Recipes"
-            element={<MyRecipesPage recipes={personalRecipes} onSaveRecipe={handleSavePersonalRecipe} onSelectRecipe={handleSelectPersonalRecipe} />}
+            element={<MyRecipesPage onSelectRecipe={handleSelectPersonalRecipe} />}
           />
           <Route path="/my-recipes" element={<Navigate to="/My-Recipes" replace />} />
           <Route path="/Login" element={<LoginPage />} />
           <Route path="/login" element={<Navigate to="/Login" replace />} />
+          <Route path="/Verify-Email" element={<VerifyEmailPage />} />
+          <Route path="/Reset-Password" element={<ResetPasswordPage />} />
+          <Route path="/Moderation" element={<ModerationPage />} />
+          <Route path="/moderation" element={<Navigate to="/Moderation" replace />} />
           <Route
             path="/Shopping-List"
             element={
               <ShoppingListPage
                 items={shoppingList}
-                onToggleItem={handleToggleShoppingItem}
-                onDeleteItem={handleDeleteShoppingItem}
-                onClearAll={handleClearShoppingList}
+                onToggleItem={toggleShoppingItem}
+                onDeleteItem={deleteShoppingItem}
+                onClearAll={clearShoppingList}
                 onAddItem={handleAddCustomShoppingItem}
                 onExploreRecipes={handleExploreRecipes}
               />

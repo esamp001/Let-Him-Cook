@@ -1,9 +1,11 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import { ArrowLeftOutlined, ArrowRightOutlined, GoogleOutlined } from '@ant-design/icons';
-import { Button, Checkbox, ConfigProvider, Divider, Form, Grid, Input, Tabs, message, type ThemeConfig } from 'antd';
+import { Button, Checkbox, ConfigProvider, Divider, Form, Grid, Input, Modal, Tabs, message, type ThemeConfig } from 'antd';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ChefHatIcon } from '../components/ChefHatIcon';
 import { FridgeIllustration } from '../components/FridgeIllustration';
+import { useCurrentUser } from '../hooks/useCurrentUser';
+import type { ApiResponse } from '../types/interfaces/ApiResponse';
 import type { AuthApiResponse } from '../types/interfaces/AuthApiResponse';
 import type { LoginForm } from '../types/interfaces/LoginForm';
 import { culinaryPalette } from '../theme/themeConfig';
@@ -245,6 +247,11 @@ const styles: Record<string, CSSProperties> = {
     fontSize: 12,
     lineHeight: 1.5,
     color: culinaryPalette.textMuted
+  },
+  resetHint: {
+    margin: '0 0 16px',
+    fontSize: 14,
+    color: culinaryPalette.textSecondary
   }
 };
 
@@ -261,6 +268,10 @@ const LoginPage = () => {
     keepSignedIn: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResetModalOpen, setIsResetModalOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
+  const { setCurrentUser } = useCurrentUser();
   const [searchParams, setSearchParams] = useSearchParams();
   const redirectPath = getSafeRedirectPath(searchParams.get('redirect'));
 
@@ -300,11 +311,42 @@ const LoginPage = () => {
         throw new Error(response.error?.message ?? fallbackErrorMessage);
       }
 
+      setCurrentUser(response.data.user);
+
+      if (!isSignIn) {
+        message.success('Account created. Check your email to confirm your address.');
+      }
+
       navigate(redirectPath, { replace: true });
     } catch (error) {
       message.error(error instanceof Error ? error.message : fallbackErrorMessage);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRequestPasswordReset = async () => {
+    setIsSendingReset(true);
+
+    try {
+      const apiResponse = await fetch('/api/v1/auth/password-reset/request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail }),
+      });
+
+      const response = await apiResponse.json() as ApiResponse<{ message: string }>;
+
+      if (!apiResponse.ok || !response.data) {
+        throw new Error(response.error?.message ?? 'Unable to send the reset link.');
+      }
+
+      message.success(response.data.message);
+      setIsResetModalOpen(false);
+    } catch (error) {
+      message.error(error instanceof Error ? error.message : 'Unable to send the reset link.');
+    } finally {
+      setIsSendingReset(false);
     }
   };
 
@@ -432,7 +474,10 @@ const LoginPage = () => {
                 <Button
                   type="link"
                   style={styles.linkButton}
-                  onClick={() => message.info('Password reset is coming soon.')}
+                  onClick={() => {
+                    setResetEmail(userForm.email);
+                    setIsResetModalOpen(true);
+                  }}
                 >
                   {isCompact ? 'Forgot?' : 'Forgot password?'}
                 </Button>
@@ -511,6 +556,27 @@ const LoginPage = () => {
           {!isSignIn && <p style={styles.legal}>By creating an account, you agree to the Terms of Service and Privacy Policy.</p>}
         </div>
       </div>
+
+      <Modal
+        title="Reset your password"
+        open={isResetModalOpen}
+        okText="Send reset link"
+        confirmLoading={isSendingReset}
+        okButtonProps={{ disabled: !resetEmail.trim() }}
+        onOk={handleRequestPasswordReset}
+        onCancel={() => setIsResetModalOpen(false)}
+      >
+        <p style={styles.resetHint}>Enter your account email. If it matches an account, we will send a link to choose a new password.</p>
+        <Input
+          type="email"
+          value={resetEmail}
+          placeholder="you@example.com"
+          autoComplete="email"
+          onChange={(event) => setResetEmail(event.target.value)}
+          onPressEnter={handleRequestPasswordReset}
+          style={styles.input}
+        />
+      </Modal>
     </section>
   );
 };

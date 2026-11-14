@@ -1,7 +1,10 @@
 import { useState, type CSSProperties } from 'react';
 import { Button, Checkbox } from 'antd';
 import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined} from '@ant-design/icons';
+import { CommunityFeedback } from '../components/CommunityFeedback';
 import { toast } from '../components/Toast';
+import { getCommunityRecipeId } from '../front-end-helpers/community.helpers';
+import { useFavorites } from '../hooks/useFavorites';
 import type { ShoppingItem } from '../types/interfaces/ShoppingItem';
 import type { RecipeDetailPageProps } from '../types/interfaces/RecipeDetailPageProps';
 import { culinaryPalette } from '../theme/themeConfig';
@@ -209,7 +212,9 @@ const RecipeDetailPage = ({
 
   const missingIngredientsCount = recipe.ingredients.filter((ing) => !ing.isOwned).map((ing) => ing.name)
 
-  const [favorite, setFavorite] = useState(recipe.isFavorite ?? false);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const favorite = isFavorite(recipe.id);
+  const communityRecipeId = getCommunityRecipeId(recipe.id);
   const [selectedIngredients, setSelectedIngredients] = useState<string[]>( missingIngredientsCount);
 
 
@@ -217,14 +222,6 @@ const RecipeDetailPage = ({
     setSelectedIngredients((prev) =>
       prev.includes(name) ? prev.filter((item) => item !== name) : [...prev, name]
     );
-  };
-
-  const handleToggleFavorite = () => {
-    const nextFavorite = !favorite;
-    setFavorite(nextFavorite);
-    if (nextFavorite) {
-      toast.success('Recipe added to your favorites!');
-    }
   };
 
   const handleAddShoppingList = () => {
@@ -242,8 +239,8 @@ const RecipeDetailPage = ({
       return;
     }
 
+    // The shopping list shows the result once it is saved, or asks a guest to sign in.
     onAddToShoppingList(itemsToAdd);
-    toast.info(`Added ${itemsToAdd.length} items to your shopping list.`);
   };
 
   return (
@@ -272,8 +269,9 @@ const RecipeDetailPage = ({
           <button
             type="button"
             style={styles.favoriteButton}
-            onClick={handleToggleFavorite}
-            aria-label="Toggle favorite"
+            onClick={() => void toggleFavorite(recipe)}
+            aria-label={favorite ? 'Remove from saved recipes' : 'Save to favorites'}
+            aria-pressed={favorite}
           >
             {favorite ? (
               <HeartFilled style={{ color: culinaryPalette.accent }} />
@@ -295,6 +293,8 @@ const RecipeDetailPage = ({
         {recipe.description && (
           <p style={styles.description}>{recipe.description}</p>
         )}
+
+        {communityRecipeId && <CommunityFeedback recipeId={communityRecipeId} />}
       </div>
 
       {/* Two-Column Grid: Ingredients & Steps */}

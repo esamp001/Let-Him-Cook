@@ -1,15 +1,17 @@
-import React, { useState } from 'react';
+import type React from 'react';
 import { Card, Tag } from 'antd';
 import { ClockCircleOutlined, HeartOutlined, HeartFilled, FireOutlined } from '@ant-design/icons';
+import { useFavorites } from '../hooks/useFavorites';
 import type { RecipeCardProps } from '../types/interfaces/RecipeCardProps';
 import './RecipeCard.css';
 
 export const RecipeCard = ({ recipe, onSelect }: RecipeCardProps) => {
-  const [favorite, setFavorite] = useState(recipe.isFavorite ?? false);
+  const { isFavorite, toggleFavorite } = useFavorites();
+  const favorite = isFavorite(recipe.id);
 
-  const toggleFavorite = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setFavorite((prev) => !prev);
+  const handleToggleFavorite = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    void toggleFavorite(recipe);
   };
 
   return (
@@ -27,8 +29,9 @@ export const RecipeCard = ({ recipe, onSelect }: RecipeCardProps) => {
           <button
             type="button"
             className="favorite-button"
-            onClick={toggleFavorite}
-            aria-label="Save to favorites"
+            onClick={handleToggleFavorite}
+            aria-label={favorite ? 'Remove from saved recipes' : 'Save to favorites'}
+            aria-pressed={favorite}
           >
             {favorite ? (
               <HeartFilled style={{ color: '#EA580C' }} />
@@ -56,4 +59,3 @@ export const RecipeCard = ({ recipe, onSelect }: RecipeCardProps) => {
     </Card>
   );
 };
-

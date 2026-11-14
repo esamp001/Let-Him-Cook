@@ -1,7 +1,9 @@
 import { useState, type CSSProperties } from 'react';
 import { Button, Checkbox, Modal, Input, Empty } from 'antd';
 import { PlusOutlined, DeleteOutlined, BulbOutlined, ClearOutlined } from '@ant-design/icons';
+import { SignInPrompt } from '../components/SignInPrompt';
 import { toast } from '../components/Toast';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { ShoppingListPageProps } from '../types/interfaces/ShoppingListPageProps';
 import { culinaryPalette } from '../theme/themeConfig';
 
@@ -142,17 +144,18 @@ const ShoppingListPage = ({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [newItemName, setNewItemName] = useState('');
   const [newItemQty, setNewItemQty] = useState('');
+  const { currentUser, isLoadingUser } = useCurrentUser();
 
   const handleCreateItem = () => {
     if (!newItemName.trim()) {
       toast.warning('Please enter an item name');
       return;
     }
+    // The shopping list hook shows the result once the item is saved.
     onAddItem(newItemName.trim(), newItemQty.trim() || '1');
     setNewItemName('');
     setNewItemQty('');
     setIsModalOpen(false);
-    toast.success('Item added to your shopping list');
   };
 
   const handleClearWithConfirm = () => {
@@ -169,6 +172,15 @@ const ShoppingListPage = ({
       },
     });
   };
+
+  if (!isLoadingUser && !currentUser) {
+    return (
+      <SignInPrompt
+        title="Sign in to keep a shopping list"
+        description="Your shopping list is saved to your account, so it is ready on every device."
+      />
+    );
+  }
 
   return (
     <div style={styles.wrapper}>

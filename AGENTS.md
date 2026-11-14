@@ -398,6 +398,23 @@ For the MVP, use ingredient matching as the primary sort. Add reaction-based qua
 - Use inline `if` conditions and `throw new Error(...)` when a controller-owned result violates its contract. Do not repeat repository or provider-client validation in the controller.
 - When a controller computes values that it passes in the response, declare those result variables with `let` in the request handler before the surrounding `try`, assign them inside the `try`, and then use them in the response. Give arrays explicit types when needed. Keep these variables inside the handler, never at module scope where requests could share them.
 
+### Authentication and Sign-In Redirect Standard
+
+- The backend decides who may access data. Protect every private API route (for example personal recipes, saves, reactions, reports, and submissions) with the `requireAuth` middleware, and read the signed-in user from `response.locals.authUser`. Never trust a user ID sent by the frontend.
+- Admin routes must also check that `response.locals.authUser.role` is `admin` and return `403` otherwise. Add a role-checking middleware when the first admin route is created.
+- Frontend sign-in gates and prompts only improve the experience; they never replace the backend check.
+- When the frontend asks a user to sign in, send them to the login page with the current page as `redirect`, built with `buildLoginPath(currentPath)` from `Frontend/src/front-end-helpers/auth-redirect.helpers.ts`.
+- After a successful sign-in (email or Google), return the user to that page. Pass every `redirect` value through `getSafeRedirectPath` (frontend and backend helpers) so only same-site paths are used and the app cannot be used as an open redirect.
+
+```tsx
+<Button
+  type="primary"
+  onClick={() => navigate(buildLoginPath(`${location.pathname}${location.search}`))}
+>
+  Sign in
+</Button>
+```
+
 ### TypeScript Declaration and Naming Standard
 
 - Place imports first, followed by type declarations at the very top of the file.
@@ -433,6 +450,34 @@ const DashboardPage = ({ }: DashboardPageProps) => {
 export default DashboardPage;
 ```
 
+### Frontend Form State Standard
+
+- Type form state with a named interface in its own file under `Frontend/src/types/interfaces/`, and pass it to `useState`, for example `useState<LoginForm>({ ... })`. Give every field an initial value.
+- Attach `onChange` to the input control that fires it (`Input`, `Input.Password`, `Select`, `Checkbox`), never to `Form.Item`, which has no `onChange` prop.
+- Update one field with the functional updater so each change builds on the latest state: `setForm((previousForm) => ({ ...previousForm, field: newValue }))`. Do not spread the current render's state variable, such as `{ ...userForm, name: value }`.
+- Read the new value from the event that the control provides: `event.target.value` for text inputs and `event.target.checked` for checkboxes. `Select` passes the value directly.
+- When the control is inside a `Form.Item` with a `name`, Ant Design already controls its `value`, so do not also set `value` from state. Use the form state only when the page needs the values before submit; otherwise read them from the `Form` `onFinish` values.
+
+```tsx
+const [userForm, setUserForm] = useState<LoginForm>({
+  name: '',
+  email: '',
+  password: '',
+  keepSignedIn: false,
+});
+
+<Input
+  placeholder="Juan dela Cruz"
+  autoComplete="name"
+  onChange={(event) => setUserForm((previousForm) => ({ ...previousForm, name: event.target.value }))}
+  style={styles.input}
+/>
+
+<Checkbox onChange={(event) => setUserForm((previousForm) => ({ ...previousForm, keepSignedIn: event.target.checked }))}>
+  Keep me signed in
+</Checkbox>
+```
+
 ### Import Statement Standard
 
 - Always write import statements inline on a single line; do not break named imports across multiple lines:
@@ -441,12 +486,58 @@ export default DashboardPage;
 import { ArrowLeftOutlined, ClockCircleOutlined, FireOutlined, HeartOutlined, HeartFilled, PlusOutlined } from '@ant-design/icons';
 ```
 
+### JSX Prop Formatting Standard
+
+- When a JSX element or component has two or more props, put each prop on its own line, indented one level deeper than the opening tag.
+- Put the closing `>` or `/>` on its own line, aligned with the opening tag, and place the children on the lines between the opening and closing tags.
+- Keep an element with zero or one prop on a single line, for example `<div style={styles.heading}>` or `<Checkbox style={styles.checkbox}>Keep me signed in</Checkbox>`.
+
+```tsx
+<Form.Item
+  name="name"
+  label="Name"
+  rules={[{ required: true, message: 'Enter your name.' }]}
+  style={styles.formItem}
+>
+  <Input
+    placeholder="Juan dela Cruz"
+    autoComplete="name"
+    style={styles.input}
+  />
+</Form.Item>
+```
+
 ### Frontend Styling Standard
 
 - Use inline React styles in the owning `.tsx` file for component and page presentation.
 - Define reusable style values as typed `CSSProperties` objects near the top of that file, then pass them through the `style` prop.
 - Do not create or import `App.css`, page-level, or component-level CSS files for application presentation.
 - Keep only genuinely global browser and theme rules in `index.css`.
+- Write every `CSSProperties` object with one property per line, indented one level inside the braces, with no comma after the last property. Put the closing brace on its own line, aligned with the declaration.
+- In a `Record<string, CSSProperties>` styles map, put each style key on its own line and format its object the same way.
+
+```tsx
+const avatarButtonStyle: CSSProperties = {
+  width: 40,
+  height: 40,
+  minWidth: 40,
+  padding: 0,
+  borderRadius: '50%',
+  border: `2px solid ${culinaryPalette.border}`,
+  background: culinaryPalette.surface
+};
+
+const styles: Record<string, CSSProperties> = {
+  heading: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 6
+  },
+  formItem: {
+    marginBottom: 16
+  }
+};
+```
 
 ### Frontend Fetch Standard
 

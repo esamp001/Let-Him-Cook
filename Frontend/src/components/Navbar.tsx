@@ -1,8 +1,15 @@
-import { Badge } from 'antd';
+import type { CSSProperties } from 'react';
+import { UserOutlined } from '@ant-design/icons';
+import { Avatar, Badge, Button } from 'antd';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ChefHatIcon } from './ChefHatIcon';
 import type { NavbarProps } from '../types/interfaces/NavbarProps';
+import { culinaryPalette } from '../theme/themeConfig';
 import './Navbar.css';
+
+const avatarButtonStyle: CSSProperties = { width: 40, height: 40, minWidth: 40, padding: 0, borderRadius: '50%', border: `2px solid ${culinaryPalette.border}`, background: culinaryPalette.surface };
+const activeAvatarButtonStyle: CSSProperties = { borderColor: culinaryPalette.primary };
+const avatarStyle: CSSProperties = { background: culinaryPalette.successSurface, color: culinaryPalette.primary };
 
 export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
   const navigate = useNavigate();
@@ -69,26 +76,15 @@ export const Navbar = ({ shoppingListCount = 0 }: NavbarProps) => {
 
         {/* User Profile */}
         <div className="navbar-user">
-          <button
-            type="button"
-            className={`user-avatar-btn ${isMyRecipes ? 'active' : ''}`}
+          <Button
+            type="text"
+            shape="circle"
             aria-label="My recipes"
             onClick={() => navigate('/My-Recipes')}
+            style={{ ...avatarButtonStyle, ...(isMyRecipes ? activeAvatarButtonStyle : {}) }}
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#9CA3AF"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </button>
+            <Avatar size={32} icon={<UserOutlined />} style={avatarStyle} />
+          </Button>
         </div>
       </div>
     </header>

@@ -1,5 +1,5 @@
 import { useEffect, useState, type CSSProperties } from 'react';
-import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Navbar } from './components/Navbar';
 import { MobileNav } from './components/MobileNav';
 import { ToastContainer } from './components/Toast';
@@ -8,6 +8,7 @@ import RecipesPage from './pages/RecipesPage';
 import ShoppingListPage from './pages/ShoppingListPage';
 import CookingChatPage from './pages/CookingChatPage';
 import MyRecipesPage from './pages/MyRecipesPage';
+import LoginPage from './pages/LoginPage';
 import type { CuisinePreference, FallbackChoice } from './types/ai';
 import type { ChatMessage } from './types/interfaces/ChatMessage';
 import type { CookingConversation } from './types/interfaces/CookingConversation';
@@ -87,6 +88,7 @@ const mapAiRecipe = (recipe: AiRecipe): Recipe => {
 
 function App() {
   const navigate = useNavigate();
+  const isAuthPage = useLocation().pathname.toLowerCase() === '/login';
   const [searchQuery, setSearchQuery] = useState('chicken + potatoes');
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [shoppingList, setShoppingList] = useState<ShoppingItem[]>(initialShoppingList);
@@ -318,7 +320,7 @@ function App() {
   return (
     <div style={appShellStyle}>
       {/* Top Navigation Bar */}
-      <Navbar shoppingListCount={shoppingList.filter((i) => !i.checked).length} />
+      {!isAuthPage && <Navbar shoppingListCount={shoppingList.filter((i) => !i.checked).length} />}
 
       {/* Main Page Body */}
       <main style={mainContentStyle}>
@@ -376,6 +378,8 @@ function App() {
             element={<MyRecipesPage recipes={personalRecipes} onSaveRecipe={handleSavePersonalRecipe} onSelectRecipe={handleSelectPersonalRecipe} />}
           />
           <Route path="/my-recipes" element={<Navigate to="/My-Recipes" replace />} />
+          <Route path="/Login" element={<LoginPage />} />
+          <Route path="/login" element={<Navigate to="/Login" replace />} />
           <Route
             path="/Shopping-List"
             element={
@@ -395,7 +399,7 @@ function App() {
       </main>
 
       {/* Mobile Bottom Navigation Bar */}
-      <MobileNav shoppingListCount={shoppingList.filter((i) => !i.checked).length} />
+      {!isAuthPage && <MobileNav shoppingListCount={shoppingList.filter((i) => !i.checked).length} />}
 
       {/* Global Toast Notifications */}
       <ToastContainer />

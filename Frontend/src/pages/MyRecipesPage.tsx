@@ -11,22 +11,93 @@ import { culinaryPalette } from '../theme/themeConfig';
 import generatedRecipeImage from '../assets/Rustic Herb Chicken Bowl with Fresh Garnishes.png';
 
 const styles: Record<string, CSSProperties> = {
-  page: { padding: '32px 24px 80px', background: culinaryPalette.pageBackground, minHeight: 'calc(100vh - 72px)' },
-  container: { maxWidth: 920, margin: '0 auto' },
-  heading: { marginBottom: 6, color: culinaryPalette.text },
-  intro: { margin: '0 0 24px', color: culinaryPalette.textSecondary, fontSize: 16 },
-  card: { borderColor: culinaryPalette.border, borderRadius: 16, marginBottom: 24 },
-  fieldLabel: { display: 'block', marginBottom: 8, color: culinaryPalette.text, fontWeight: 600 },
-  rawText: { minHeight: 190, resize: 'vertical', borderRadius: 12 },
-  characterCount: { display: 'block', marginTop: 4, color: culinaryPalette.textSecondary, fontSize: 11, textAlign: 'right' },
-  importHint: { margin: '6px 0 0', color: culinaryPalette.textSecondary, fontSize: 12, lineHeight: 1.45 },
-  actions: { display: 'flex', gap: 12, marginTop: 16, flexWrap: 'wrap' },
-  reviewSection: { marginTop: 20 },
-  ingredientRow: { display: 'grid', gridTemplateColumns: 'minmax(120px, 1fr) minmax(180px, 2fr)', gap: 10, marginBottom: 10 },
-  stepRow: { display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 },
-  stepNumber: { width: 24, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: culinaryPalette.textSecondary, fontWeight: 600 },
-  savedHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 12 },
-  savedItem: { cursor: 'pointer' },
+  page: {
+    padding: '32px 24px 80px',
+    background: culinaryPalette.pageBackground,
+    minHeight: 'calc(100vh - 72px)'
+  },
+  container: {
+    maxWidth: 920,
+    margin: '0 auto'
+  },
+  heading: {
+    marginBottom: 6,
+    color: culinaryPalette.text
+  },
+  intro: {
+    margin: '0 0 24px',
+    color: culinaryPalette.textSecondary,
+    fontSize: 16
+  },
+  card: {
+    borderColor: culinaryPalette.border,
+    borderRadius: 16,
+    marginBottom: 24
+  },
+  fieldLabel: {
+    display: 'block',
+    marginBottom: 8,
+    color: culinaryPalette.text,
+    fontWeight: 600
+  },
+  rawText: {
+    minHeight: 190,
+    resize: 'vertical',
+    borderRadius: 12
+  },
+  characterCount: {
+    display: 'block',
+    marginTop: 4,
+    color: culinaryPalette.textSecondary,
+    fontSize: 11,
+    textAlign: 'right'
+  },
+  importHint: {
+    margin: '6px 0 0',
+    color: culinaryPalette.textSecondary,
+    fontSize: 12,
+    lineHeight: 1.45
+  },
+  actions: {
+    display: 'flex',
+    gap: 12,
+    marginTop: 16,
+    flexWrap: 'wrap'
+  },
+  reviewSection: {
+    marginTop: 20
+  },
+  ingredientRow: {
+    display: 'grid',
+    gridTemplateColumns: 'minmax(120px, 1fr) minmax(180px, 2fr)',
+    gap: 10,
+    marginBottom: 10
+  },
+  stepRow: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 10
+  },
+  stepNumber: {
+    width: 24,
+    height: 32,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    color: culinaryPalette.textSecondary,
+    fontWeight: 600
+  },
+  savedHeader: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    marginBottom: 12
+  },
+  savedItem: {
+    cursor: 'pointer'
+  }
 };
 
 const maxRecipeTextLength = 4_000;

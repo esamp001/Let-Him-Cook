@@ -7,7 +7,7 @@ import heroImg from '../assets/Rustic Herb Chicken Bowl with Fresh Garnishes.png
 import './HeroSection.css';
 
 const searchBarStyle: CSSProperties = {
-  paddingLeft: 4,
+  paddingLeft: 4
 };
 
 const cuisineFilterStyle: CSSProperties = {
@@ -22,7 +22,7 @@ const cuisineFilterStyle: CSSProperties = {
   backgroundColor: '#EFF6F1',
   color: '#0D3B2E',
   flexShrink: 0,
-  cursor: 'pointer',
+  cursor: 'pointer'
 };
 
 const cuisineTextStyle: CSSProperties = {
@@ -30,19 +30,19 @@ const cuisineTextStyle: CSSProperties = {
   flexDirection: 'column',
   alignItems: 'flex-start',
   lineHeight: 1.05,
-  flex: 1,
+  flex: 1
 };
 
 const cuisineLabelStyle: CSSProperties = {
   fontSize: 9,
   fontWeight: 500,
-  color: '#7A8C84',
+  color: '#7A8C84'
 };
 
 const cuisineValueStyle: CSSProperties = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#0D3B2E',
+  color: '#0D3B2E'
 };
 
 const cuisineLabels: Record<CuisinePreference, string> = {

@@ -6,28 +6,129 @@ import type { ShoppingListPageProps } from '../types/interfaces/ShoppingListPage
 import { culinaryPalette } from '../theme/themeConfig';
 
 const styles: Record<string, CSSProperties> = {
-  wrapper: { padding: '32px 0 64px' },
-  container: { maxWidth: 720, margin: '0 auto', padding: '0 24px' },
-  header: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 },
-  title: { fontSize: 26, fontWeight: 800, color: culinaryPalette.text, margin: 0 },
-  actions: { display: 'flex', alignItems: 'center', gap: 12 },
-  addItemButton: { height: 42, fontWeight: 600 },
-  itemsCard: { backgroundColor: culinaryPalette.surface, borderRadius: 16, border: `1px solid ${culinaryPalette.border}`, boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)', overflow: 'hidden', marginBottom: 24 },
-  itemRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: `1px solid ${culinaryPalette.borderSubtle}` },
-  itemLeft: { display: 'flex', alignItems: 'center', gap: 14, flex: 1, cursor: 'pointer' },
-  itemName: { fontSize: 15, fontWeight: 600, color: culinaryPalette.textSecondary },
-  checkedItemName: { textDecoration: 'line-through', color: culinaryPalette.textSubtle },
-  itemRight: { display: 'flex', alignItems: 'center', gap: 16 },
-  itemQuantity: { fontSize: 14, color: culinaryPalette.textMuted, fontWeight: 500 },
-  checkedItemQuantity: { color: culinaryPalette.textSubtle },
-  deleteButton: { background: 'none', border: 'none', color: culinaryPalette.textSubtle, cursor: 'pointer', padding: 4, fontSize: 15 },
-  emptyCard: { backgroundColor: culinaryPalette.surface, borderRadius: 16, border: `1px solid ${culinaryPalette.border}`, padding: '48px 24px', textAlign: 'center', marginBottom: 24 },
-  tipBanner: { display: 'flex', alignItems: 'flex-start', gap: 12, backgroundColor: culinaryPalette.warmSurface, border: `1px solid ${culinaryPalette.warmBorder}`, borderRadius: 12, padding: '14px 18px' },
-  tipIcon: { fontSize: 18, color: culinaryPalette.primary, marginTop: 2 },
-  tipContent: { fontSize: 13, color: culinaryPalette.textSecondary, lineHeight: 1.5 },
-  tipTitle: { fontWeight: 700, color: culinaryPalette.primary },
-  modalFields: { display: 'flex', flexDirection: 'column', gap: 16, marginTop: 16 },
-  modalLabel: { display: 'block', marginBottom: 6, fontWeight: 500 },
+  wrapper: {
+    padding: '32px 0 64px'
+  },
+  container: {
+    maxWidth: 720,
+    margin: '0 auto',
+    padding: '0 24px'
+  },
+  header: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 24
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 800,
+    color: culinaryPalette.text,
+    margin: 0
+  },
+  actions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 12
+  },
+  addItemButton: {
+    height: 42,
+    fontWeight: 600
+  },
+  itemsCard: {
+    backgroundColor: culinaryPalette.surface,
+    borderRadius: 16,
+    border: `1px solid ${culinaryPalette.border}`,
+    boxShadow: '0 4px 14px rgba(0, 0, 0, 0.03)',
+    overflow: 'hidden',
+    marginBottom: 24
+  },
+  itemRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: '16px 20px',
+    borderBottom: `1px solid ${culinaryPalette.borderSubtle}`
+  },
+  itemLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 14,
+    flex: 1,
+    cursor: 'pointer'
+  },
+  itemName: {
+    fontSize: 15,
+    fontWeight: 600,
+    color: culinaryPalette.textSecondary
+  },
+  checkedItemName: {
+    textDecoration: 'line-through',
+    color: culinaryPalette.textSubtle
+  },
+  itemRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 16
+  },
+  itemQuantity: {
+    fontSize: 14,
+    color: culinaryPalette.textMuted,
+    fontWeight: 500
+  },
+  checkedItemQuantity: {
+    color: culinaryPalette.textSubtle
+  },
+  deleteButton: {
+    background: 'none',
+    border: 'none',
+    color: culinaryPalette.textSubtle,
+    cursor: 'pointer',
+    padding: 4,
+    fontSize: 15
+  },
+  emptyCard: {
+    backgroundColor: culinaryPalette.surface,
+    borderRadius: 16,
+    border: `1px solid ${culinaryPalette.border}`,
+    padding: '48px 24px',
+    textAlign: 'center',
+    marginBottom: 24
+  },
+  tipBanner: {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: 12,
+    backgroundColor: culinaryPalette.warmSurface,
+    border: `1px solid ${culinaryPalette.warmBorder}`,
+    borderRadius: 12,
+    padding: '14px 18px'
+  },
+  tipIcon: {
+    fontSize: 18,
+    color: culinaryPalette.primary,
+    marginTop: 2
+  },
+  tipContent: {
+    fontSize: 13,
+    color: culinaryPalette.textSecondary,
+    lineHeight: 1.5
+  },
+  tipTitle: {
+    fontWeight: 700,
+    color: culinaryPalette.primary
+  },
+  modalFields: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 16,
+    marginTop: 16
+  },
+  modalLabel: {
+    display: 'block',
+    marginBottom: 6,
+    fontWeight: 500
+  }
 };
 
 const ShoppingListPage = ({

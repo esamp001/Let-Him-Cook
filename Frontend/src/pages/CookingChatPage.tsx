@@ -7,46 +7,266 @@ import type { CookingChatPageProps } from '../types/interfaces/CookingChatPagePr
 import { culinaryPalette } from '../theme/themeConfig';
 
 const styles: Record<string, CSSProperties> = {
-  page: { width: '100%', height: 'calc(100dvh - 72px)', minHeight: 0, overflow: 'hidden', background: culinaryPalette.pageBackground },
-  layout: { display: 'flex', width: '100%', height: '100%', minHeight: 0 },
-  sidebar: { display: 'flex', flex: '0 0 275px', flexDirection: 'column', height: '100%', minHeight: 0, padding: '28px 20px', overflow: 'hidden', background: culinaryPalette.surface, borderRight: `1px solid ${culinaryPalette.border}` },
-  newChatButton: { width: '100%', justifyContent: 'flex-start' },
-  sidebarDivider: { margin: '20px 0', border: 'none', borderTop: `1px solid ${culinaryPalette.border}` },
-  sidebarTitle: { margin: '0 0 10px', color: culinaryPalette.textSecondary, fontSize: 14, fontWeight: 700 },
-  conversationList: { display: 'flex', flex: 1, flexDirection: 'column', gap: 6, minHeight: 0, overflowY: 'auto', paddingRight: 4 },
-  conversationButton: { flexShrink: 0, width: '100%', height: 50, justifyContent: 'flex-start', overflow: 'hidden', textAlign: 'left', whiteSpace: 'normal' },
-  activeConversationButton: { background: culinaryPalette.successSurface, color: culinaryPalette.primary },
-  chatContent: { display: 'flex', flex: 1, flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' },
-  conversation: { flex: 1, minHeight: 0, overflowY: 'auto', padding: '32px' },
-  chat: { display: 'flex', flexDirection: 'column', gap: 18, width: '100%', maxWidth: 1240, margin: '0 auto' },
-  row: { display: 'flex', gap: 10, alignItems: 'flex-start' },
-  userRow: { justifyContent: 'flex-start' },
-  assistantRow: { justifyContent: 'flex-end' },
-  assistantContent: { width: '82%', maxWidth: 1120, minWidth: 0 },
-  userContent: { maxWidth: '70%', minWidth: 0 },
-  avatar: { width: 34, height: 34, flexShrink: 0, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: culinaryPalette.primary, color: culinaryPalette.surface },
-  assistantAvatar: { background: 'transparent' },
-  userAvatar: { background: culinaryPalette.accent },
-  bubble: { maxWidth: '78%', padding: '13px 16px', borderRadius: 18, background: culinaryPalette.surface, color: culinaryPalette.textSecondary, border: `1px solid ${culinaryPalette.border}`, lineHeight: 1.55, whiteSpace: 'pre-wrap' },
-  userBubble: { maxWidth: '100%', background: culinaryPalette.primary, color: culinaryPalette.surface, borderColor: culinaryPalette.primary, borderBottomLeftRadius: 4, overflowWrap: 'anywhere' },
-  assistantBubble: { maxWidth: '100%', borderBottomRightRadius: 4 },
-  assistantStatus: { marginBottom: 10 },
-  assistantStatusText: { display: 'inline-block', margin: 0, padding: '4px 10px', color: culinaryPalette.primary, background: culinaryPalette.successSurface, borderRadius: 999, fontSize: 12, fontWeight: 700 },
-  followUp: { width: 'min(100%, 620px)', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${culinaryPalette.border}`, whiteSpace: 'normal' },
-  followUpLabel: { margin: '0 0 10px', color: culinaryPalette.text, fontWeight: 700 },
-  optionGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))', gap: 8 },
-  optionButton: { height: 'auto', minHeight: 42, padding: '9px 12px', textAlign: 'left', whiteSpace: 'normal', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'flex-start' },
-  selectedOption: { background: '#E7F5EC', borderColor: culinaryPalette.primary, color: culinaryPalette.text },
-  continueButton: { width: '100%', marginTop: 10 },
-  fallbackChoices: { width: 'min(100%, 620px)', marginTop: 12, paddingTop: 12, borderTop: `1px solid ${culinaryPalette.border}`, whiteSpace: 'normal' },
-  fallbackButton: { width: '100%', height: 'auto', minHeight: 42, marginTop: 8, padding: '9px 12px', textAlign: 'left', whiteSpace: 'normal', display: 'flex', alignItems: 'center', justifyContent: 'flex-start' },
-  recipeList: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, width: '100%', marginTop: 10 },
-  viewAllButton: { marginTop: 10 },
-  chatFooter: { flexShrink: 0, padding: '16px 32px 24px', background: culinaryPalette.pageBackground, borderTop: `1px solid ${culinaryPalette.border}` },
-  composer: { display: 'flex', gap: 10, alignItems: 'center', width: '100%', maxWidth: 1240, margin: '0 auto', padding: 10, background: culinaryPalette.surface, border: `1px solid ${culinaryPalette.border}`, borderRadius: 18, boxShadow: '0 12px 30px rgba(17, 24, 39, 0.12)' },
-  input: { border: 'none', boxShadow: 'none', fontSize: 15 },
-  empty: { padding: '24px 0', color: culinaryPalette.textSecondary, lineHeight: 1.6 },
-  error: { width: '100%', maxWidth: 1240, margin: '0 auto 10px', padding: '10px 14px', borderRadius: 10, background: '#FEF2F2', color: '#B91C1C', border: '1px solid #FECACA' },
+  page: {
+    width: '100%',
+    height: 'calc(100dvh - 72px)',
+    minHeight: 0,
+    overflow: 'hidden',
+    background: culinaryPalette.pageBackground
+  },
+  layout: {
+    display: 'flex',
+    width: '100%',
+    height: '100%',
+    minHeight: 0
+  },
+  sidebar: {
+    display: 'flex',
+    flex: '0 0 275px',
+    flexDirection: 'column',
+    height: '100%',
+    minHeight: 0,
+    padding: '28px 20px',
+    overflow: 'hidden',
+    background: culinaryPalette.surface,
+    borderRight: `1px solid ${culinaryPalette.border}`
+  },
+  newChatButton: {
+    width: '100%',
+    justifyContent: 'flex-start'
+  },
+  sidebarDivider: {
+    margin: '20px 0',
+    border: 'none',
+    borderTop: `1px solid ${culinaryPalette.border}`
+  },
+  sidebarTitle: {
+    margin: '0 0 10px',
+    color: culinaryPalette.textSecondary,
+    fontSize: 14,
+    fontWeight: 700
+  },
+  conversationList: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    gap: 6,
+    minHeight: 0,
+    overflowY: 'auto',
+    paddingRight: 4
+  },
+  conversationButton: {
+    flexShrink: 0,
+    width: '100%',
+    height: 50,
+    justifyContent: 'flex-start',
+    overflow: 'hidden',
+    textAlign: 'left',
+    whiteSpace: 'normal'
+  },
+  activeConversationButton: {
+    background: culinaryPalette.successSurface,
+    color: culinaryPalette.primary
+  },
+  chatContent: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'hidden'
+  },
+  conversation: {
+    flex: 1,
+    minHeight: 0,
+    overflowY: 'auto',
+    padding: '32px'
+  },
+  chat: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 18,
+    width: '100%',
+    maxWidth: 1240,
+    margin: '0 auto'
+  },
+  row: {
+    display: 'flex',
+    gap: 10,
+    alignItems: 'flex-start'
+  },
+  userRow: {
+    justifyContent: 'flex-start'
+  },
+  assistantRow: {
+    justifyContent: 'flex-end'
+  },
+  assistantContent: {
+    width: '82%',
+    maxWidth: 1120,
+    minWidth: 0
+  },
+  userContent: {
+    maxWidth: '70%',
+    minWidth: 0
+  },
+  avatar: {
+    width: 34,
+    height: 34,
+    flexShrink: 0,
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    background: culinaryPalette.primary,
+    color: culinaryPalette.surface
+  },
+  assistantAvatar: {
+    background: 'transparent'
+  },
+  userAvatar: {
+    background: culinaryPalette.accent
+  },
+  bubble: {
+    maxWidth: '78%',
+    padding: '13px 16px',
+    borderRadius: 18,
+    background: culinaryPalette.surface,
+    color: culinaryPalette.textSecondary,
+    border: `1px solid ${culinaryPalette.border}`,
+    lineHeight: 1.55,
+    whiteSpace: 'pre-wrap'
+  },
+  userBubble: {
+    maxWidth: '100%',
+    background: culinaryPalette.primary,
+    color: culinaryPalette.surface,
+    borderColor: culinaryPalette.primary,
+    borderBottomLeftRadius: 4,
+    overflowWrap: 'anywhere'
+  },
+  assistantBubble: {
+    maxWidth: '100%',
+    borderBottomRightRadius: 4
+  },
+  assistantStatus: {
+    marginBottom: 10
+  },
+  assistantStatusText: {
+    display: 'inline-block',
+    margin: 0,
+    padding: '4px 10px',
+    color: culinaryPalette.primary,
+    background: culinaryPalette.successSurface,
+    borderRadius: 999,
+    fontSize: 12,
+    fontWeight: 700
+  },
+  followUp: {
+    width: 'min(100%, 620px)',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTop: `1px solid ${culinaryPalette.border}`,
+    whiteSpace: 'normal'
+  },
+  followUpLabel: {
+    margin: '0 0 10px',
+    color: culinaryPalette.text,
+    fontWeight: 700
+  },
+  optionGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(190px, 1fr))',
+    gap: 8
+  },
+  optionButton: {
+    height: 'auto',
+    minHeight: 42,
+    padding: '9px 12px',
+    textAlign: 'left',
+    whiteSpace: 'normal',
+    borderRadius: 10,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start'
+  },
+  selectedOption: {
+    background: '#E7F5EC',
+    borderColor: culinaryPalette.primary,
+    color: culinaryPalette.text
+  },
+  continueButton: {
+    width: '100%',
+    marginTop: 10
+  },
+  fallbackChoices: {
+    width: 'min(100%, 620px)',
+    marginTop: 12,
+    paddingTop: 12,
+    borderTop: `1px solid ${culinaryPalette.border}`,
+    whiteSpace: 'normal'
+  },
+  fallbackButton: {
+    width: '100%',
+    height: 'auto',
+    minHeight: 42,
+    marginTop: 8,
+    padding: '9px 12px',
+    textAlign: 'left',
+    whiteSpace: 'normal',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-start'
+  },
+  recipeList: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
+    gap: 14,
+    width: '100%',
+    marginTop: 10
+  },
+  viewAllButton: {
+    marginTop: 10
+  },
+  chatFooter: {
+    flexShrink: 0,
+    padding: '16px 32px 24px',
+    background: culinaryPalette.pageBackground,
+    borderTop: `1px solid ${culinaryPalette.border}`
+  },
+  composer: {
+    display: 'flex',
+    gap: 10,
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 1240,
+    margin: '0 auto',
+    padding: 10,
+    background: culinaryPalette.surface,
+    border: `1px solid ${culinaryPalette.border}`,
+    borderRadius: 18,
+    boxShadow: '0 12px 30px rgba(17, 24, 39, 0.12)'
+  },
+  input: {
+    border: 'none',
+    boxShadow: 'none',
+    fontSize: 15
+  },
+  empty: {
+    padding: '24px 0',
+    color: culinaryPalette.textSecondary,
+    lineHeight: 1.6
+  },
+  error: {
+    width: '100%',
+    maxWidth: 1240,
+    margin: '0 auto 10px',
+    padding: '10px 14px',
+    borderRadius: 10,
+    background: '#FEF2F2',
+    color: '#B91C1C',
+    border: '1px solid #FECACA'
+  }
 };
 
 const CookingChatPage = ({ messages, isLoading, error, onSendMessage, onStartOver, onSelectRecipe, onViewAllRecipes, onSelectFallback, conversations, activeConversationId, onSelectConversation }: CookingChatPageProps) => {

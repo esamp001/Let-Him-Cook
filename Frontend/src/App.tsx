@@ -31,8 +31,15 @@ const initialShoppingList: ShoppingItem[] = [
   { id: '6', name: 'Fresh parsley (optional)', quantity: '1 bunch', checked: false },
 ];
 
-const appShellStyle: CSSProperties = { minHeight: '100vh', display: 'flex', flexDirection: 'column', backgroundColor: culinaryPalette.pageBackground };
-const mainContentStyle: CSSProperties = { flex: 1 };
+const appShellStyle: CSSProperties = {
+  minHeight: '100vh',
+  display: 'flex',
+  flexDirection: 'column',
+  backgroundColor: culinaryPalette.pageBackground
+};
+const mainContentStyle: CSSProperties = {
+  flex: 1
+};
 const conversationStorageKey = 'let-him-cook-conversations';
 const personalRecipeStorageKey = 'let-him-cook-personal-recipes';
 

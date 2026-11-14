@@ -21,4 +21,9 @@ export const env = {
   // Leaving this unset keeps the existing model and behaviour unchanged.
   ollamaImportModel: process.env.OLLAMA_IMPORT_MODEL ?? process.env.OLLAMA_MODEL ?? 'qwen3:4b',
   theMealDbBaseUrl: process.env.THEMEALDB_BASE_URL ?? 'https://www.themealdb.com/api/json/v1/1',
+  googleClientId: process.env.GOOGLE_CLIENT_ID ?? '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+  // Points at the frontend dev server so the Vite proxy forwards the callback and the
+  // final redirect to /Home lands on the frontend.
+  googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:5173/api/v1/auth/google/callback',
 };

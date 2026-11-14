@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createSessionToken, getSessionCookieOptions, getSessionExpiresAt, hashSessionToken } from '../src/back-end-helpers/auth-session.helpers.js';
+import { createSecretToken, getSessionCookieOptions, getSessionExpiresAt, hashSecretToken } from '../src/back-end-helpers/auth-session.helpers.js';
 import { getSafeRedirectPath } from '../src/back-end-helpers/auth-redirect.helpers.js';
 import { hashPassword, verifyPassword } from '../src/back-end-helpers/password.helpers.js';
 import { signInRequestSchema, signUpRequestSchema } from '../src/modules/auth/auth.schemas.js';
@@ -20,11 +20,11 @@ test('the same password hashes differently each time because of the random salt'
 });
 
 test('session tokens are random and stored only as a SHA-256 hash', () => {
-  const sessionToken = createSessionToken();
+  const sessionToken = createSecretToken();
 
-  assert.notEqual(sessionToken, createSessionToken());
-  assert.match(hashSessionToken(sessionToken), /^[a-f0-9]{64}$/);
-  assert.equal(hashSessionToken(sessionToken), hashSessionToken(sessionToken));
+  assert.notEqual(sessionToken, createSecretToken());
+  assert.match(hashSecretToken(sessionToken), /^[a-f0-9]{64}$/);
+  assert.equal(hashSecretToken(sessionToken), hashSecretToken(sessionToken));
 });
 
 test('keep signed in sets a 30-day cookie, otherwise the cookie ends with the browser session', () => {

@@ -1,5 +1,8 @@
 import 'dotenv/config';
 
+// Development-only default for the seeded admin account; change it with ADMIN_PASSWORD.
+export const defaultAdminPassword = 'Admin@12345';
+
 const parsePort = (value: string | undefined) => {
   const port = Number(value ?? 4000);
 
@@ -26,4 +29,19 @@ export const env = {
   // Points at the frontend dev server so the Vite proxy forwards the callback and the
   // final redirect to /Home lands on the frontend.
   googleRedirectUri: process.env.GOOGLE_REDIRECT_URI ?? 'http://localhost:5173/api/v1/auth/google/callback',
+  // The frontend address used in emailed verification and password reset links.
+  appUrl: process.env.APP_URL ?? 'http://localhost:5173',
+  smtpHost: process.env.SMTP_HOST ?? '',
+  smtpPort: Number(process.env.SMTP_PORT ?? 587),
+  smtpSecure: process.env.SMTP_SECURE === 'true',
+  smtpUser: process.env.SMTP_USER ?? '',
+  smtpPassword: process.env.SMTP_PASSWORD ?? '',
+  emailFrom: process.env.EMAIL_FROM ?? 'Let Him Cook <no-reply@localhost>',
+  // Number of reverse proxies (such as Nginx) in front of Express, so rate limits see the real client IP.
+  trustProxyHops: Number(process.env.TRUST_PROXY_HOPS ?? 0),
+  // The admin account created by the admin seed. The defaults are for local development only;
+  // the seed refuses to use the default password in production.
+  adminEmail: process.env.ADMIN_EMAIL ?? 'admin@lethimcook.local',
+  adminName: process.env.ADMIN_NAME ?? 'Let Him Cook Admin',
+  adminPassword: process.env.ADMIN_PASSWORD ?? defaultAdminPassword,
 };

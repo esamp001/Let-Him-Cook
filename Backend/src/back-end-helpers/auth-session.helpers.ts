@@ -9,22 +9,34 @@ const dayInMilliseconds = 24 * 60 * 60 * 1_000;
 const keepSignedInDays = 30;
 const browserSessionDays = 1;
 const googleOAuthCookieMaxAge = 10 * 60 * 1_000;
+const authTokenLifetimeMinutes = {
+  email_verification: 24 * 60,
+  password_reset: 30
+} as const;
 
 /**
- * Name: createSessionToken.
- * Returns: A random, URL-safe session token string.
+ * Name: createSecretToken.
+ * Returns: A random, URL-safe secret token string.
  * Parameters: None.
- * Description: Generates the secret value stored in the browser's session cookie.
+ * Description: Generates the secret value for a session cookie or an emailed verification or password reset link.
  */
-export const createSessionToken = (): string => randomBytes(32).toString('base64url');
+export const createSecretToken = (): string => randomBytes(32).toString('base64url');
 
 /**
- * Name: hashSessionToken.
+ * Name: hashSecretToken.
  * Returns: The SHA-256 hex digest of the token.
- * Parameters: sessionToken, the raw token from the session cookie.
- * Description: Hashes a session token so the database never stores the raw cookie value.
+ * Parameters: secretToken, the raw token from a cookie or an emailed link.
+ * Description: Hashes a secret token so the database never stores the raw value.
  */
-export const hashSessionToken = (sessionToken: string): string => createHash('sha256').update(sessionToken).digest('hex');
+export const hashSecretToken = (secretToken: string): string => createHash('sha256').update(secretToken).digest('hex');
+
+/**
+ * Name: getAuthTokenExpiresAt.
+ * Returns: The Date when a new emailed token should expire.
+ * Parameters: purpose, either 'email_verification' (24 hours) or 'password_reset' (30 minutes).
+ * Description: Keeps password reset links short-lived while giving verification links a full day.
+ */
+export const getAuthTokenExpiresAt = (purpose: keyof typeof authTokenLifetimeMinutes): Date => new Date(Date.now() + authTokenLifetimeMinutes[purpose] * 60 * 1_000);
 
 /**
  * Name: getSessionExpiresAt.

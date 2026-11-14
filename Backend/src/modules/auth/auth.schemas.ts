@@ -1,11 +1,26 @@
 import { z } from 'zod';
 
-const emailSchema = z.string().trim().toLowerCase().email().max(320);
+export const emailSchema = z.string().trim().toLowerCase().email().max(320);
+
+const newPasswordSchema = z.string().min(8).max(128);
 
 export const signUpRequestSchema = z.object({
   name: z.string().trim().min(1).max(120),
   email: emailSchema,
-  password: z.string().min(8).max(128),
+  password: newPasswordSchema,
+});
+
+export const passwordResetRequestSchema = z.object({
+  email: emailSchema,
+});
+
+export const passwordResetConfirmSchema = z.object({
+  token: z.string().min(32).max(128),
+  password: newPasswordSchema,
+});
+
+export const emailVerificationConfirmSchema = z.object({
+  token: z.string().min(32).max(128),
 });
 
 export const signInRequestSchema = z.object({

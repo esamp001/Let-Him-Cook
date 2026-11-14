@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "tsx watch --use-system-ca src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "check": "tsc --noEmit",
@@ -17,9 +17,11 @@
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
     "express": "^5.1.0",
+    "express-rate-limit": "^8.7.4",
     "helmet": "^8.1.0",
     "knex": "^3.1.0",
     "morgan": "^1.10.1",
+    "nodemailer": "^10.5.0",
     "openid-client": "^6.9.0",
     "pg": "^8.16.3",
     "zod": "^3.24.1"
@@ -30,6 +32,7 @@
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
     "@types/node": "^22.20.5",
+    "@types/nodemailer": "^8.0.2",
     "@types/pg": "^8.23.1",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3"

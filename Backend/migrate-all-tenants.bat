@@ -1,5 +1,6 @@
 @echo off
 rem Runs "npm run migrate:latest" and then "npm run seed:run" against DATABASE_URL in .env.
+rem The seed creates the admin account (ADMIN_* in .env) if it does not exist yet.
 rem Usage: migrate-all-tenants.bat [--no-pause]
 
 setlocal

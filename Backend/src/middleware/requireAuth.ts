@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import { hashSessionToken, sessionCookieName } from '../back-end-helpers/auth-session.helpers.js';
+import { hashSecretToken, sessionCookieName } from '../back-end-helpers/auth-session.helpers.js';
 import { findSessionUser } from '../modules/auth/auth.repository.js';
 import { sessionTokenSchema } from '../modules/auth/auth.schemas.js';
 
@@ -19,7 +19,7 @@ export const requireAuth: RequestHandler = async (request, response, next) => {
   }
 
   try {
-    const authUser = await findSessionUser(hashSessionToken(parsedCookie.data));
+    const authUser = await findSessionUser(hashSecretToken(parsedCookie.data));
 
     if (!authUser) {
       response.status(401).json(unauthenticatedError);
